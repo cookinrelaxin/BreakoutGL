@@ -9,6 +9,7 @@
 
 
 #include <iostream>
+#include <string>
 
 //
 // PUBLIC ~~~
@@ -114,9 +115,12 @@ Texture2D ResourceManager::loadTextureFromFile(const GLchar *file,
                                      &channels,
                                      0);
 
-    if (width != height) {
-        throw std::runtime_error("image loading failed: invalid dimensions");
-    }
+    // if (width != height) {
+    //     std::string err("failed loading image: ");
+    //     err += file;
+    //     err += ": invalid dimensions";
+    //     throw std::runtime_error(err);
+    // }
     if (image == NULL) {
         std::cout << "Failed to load image: " << file << std::endl;
         std::cout << "last result: " << stbi_failure_reason() << std::endl;

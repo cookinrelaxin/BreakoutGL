@@ -22,7 +22,7 @@ enum ExitStatus {
 ExitStatus loop(GLFWwindow* window, GLfloat currentFrame, GLfloat lastFrame);
 
 // Window dimensions
-const GLuint SCREEN_WIDTH(800), SCREEN_HEIGHT(600);
+const GLuint SCREEN_WIDTH(1600), SCREEN_HEIGHT(1200);
 
 Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
 
@@ -33,6 +33,7 @@ GLFWwindow* create_window() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+    glfwWindowHint(GLFW_DECORATED, GL_FALSE);
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
     // Create a GLFWwindow object that we can use for GLFW's functions
@@ -103,7 +104,8 @@ ExitStatus loop(GLFWwindow * window, GLfloat currentFrame, GLfloat lastFrame) {
 
                  Breakout.Update(deltaTime);
 
-                 glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
+                 // glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
+                 glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
                  glClear(GL_COLOR_BUFFER_BIT);
                  Breakout.Render();
 
@@ -112,4 +114,3 @@ ExitStatus loop(GLFWwindow * window, GLfloat currentFrame, GLfloat lastFrame) {
                  return loop(window, glfwGetTime(), currentFrame);
              }());
 }
-
