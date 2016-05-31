@@ -5,28 +5,33 @@
 // GLFW
 #include <GLFW/glfw3.h>
 
-#include "game.h"
-#include "resource_manager.h"
+// #include "resource_manager.h"
 
 //STL
 #include <iostream>
 
 //
-#include "events.h"
+// #include "events.h"
+
+#include "shell.h"
 
 enum ExitStatus {
     ExitOK,
     ExitError
 };
 
-ExitStatus loop(GLFWwindow* window, GLfloat currentFrame, GLfloat lastFrame);
+ExitStatus loop(Shell shell, GLFWwindow* window, GLfloat currentFrame, GLfloat lastFrame);
 
 // Window dimensions
-const GLuint SCREEN_WIDTH(1600), SCREEN_HEIGHT(1200);
+// const GLuint SCREEN_WIDTH(1600), SCREEN_HEIGHT(1200);
+const GLuint SCREEN_WIDTH = 1600, SCREEN_HEIGHT = 1200;
 
-Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
+// Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+// ScriptManager scriptManager;
 
 GLFWwindow* create_window() {
+    std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
     glfwInit();
     // Set all the required options for GLFW
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -54,7 +59,7 @@ void configure_glew() {
 }
 
 void cleanup() {
-    ResourceManager::Clear();
+    // ResourceManager::Clear();
     glfwTerminate();
 }
 
@@ -67,50 +72,61 @@ void configureGL() {
 
 void configureWindow(GLFWwindow* window) {
     glfwMakeContextCurrent(window);
-    glfwSetKeyCallback(window,
-            [](GLFWwindow* window, int key, int scancode, int action, int mode) {
-                handle_keys(Breakout, window, key, scancode, action, mode);
-            }
-    );
+    // glfwSetKeyCallback(window,
+    //         [](GLFWwindow* window, int key, int scancode, int action, int mode) {
+    //             handle_keys(Breakout, window, key, scancode, action, mode);
+    //         }
+    // );
 }
 
 int main(int argc, char *argv[]) {
-    std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
-    GLFWwindow* window = create_window();
-    configureWindow(window);
+    // GLFWwindow* window = create_window();
+    // configureWindow(window);
 
-    configure_glew();
-    configureGL();
+    // configure_glew();
+    // configureGL();
 
-    Breakout.Init();
+    // Breakout.Init();
+    Shell shell(argc, argv);;
+    // shell.init(argc, argv);
+    shell.Init();
 
-    return [&window]() {
-        GLfloat currentTime(glfwGetTime());
-        ExitStatus status = loop(window, currentTime, currentTime);
-        cleanup();
-        return status;
-    }();
+    GLfloat currentFrame = glfwGetTime();
+    GLfloat lastFrame = currentFrame;
+
+    while (true) {
+        currentFrame = glfwGetTime();
+        GLfloat deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        // shell.Poll();
+        shell.Update(deltaTime);
+    }
+    return 0;
 }
 
-ExitStatus loop(GLFWwindow * window, GLfloat currentFrame, GLfloat lastFrame) {
-   return (glfwWindowShouldClose(window)
-           ? ExitOK
-           : [=]() {
-                 GLfloat deltaTime = currentFrame - lastFrame;
-
-                 glfwPollEvents();
-
-                 Breakout.ProcessInput(deltaTime);
-
-                 Breakout.Update(deltaTime);
-
-                 // glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
-                 glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-                 glClear(GL_COLOR_BUFFER_BIT);
-                 Breakout.Render();
-
-                 glfwSwapBuffers(window);
-
-                 return loop(window, glfwGetTime(), currentFrame);
-             }());
-}
+// ExitStatus loop(Shell &shell, GLFWwindow * window, GLfloat currentFrame, GLfloat lastFrame) {
+//    return (glfwWindowShouldClose(window)
+//            ? ExitOK
+//            : [=]() {
+//                  GLfloat deltaTime = currentFrame - lastFrame;
+// 
+//                  glfwPollEvents();
+// 
+//                  shell.Update(deltaTime);
+//                  // scriptManager.PollShell();
+//                  // scriptManager.Render();
+// 
+//                  // Breakout.ProcessInput(deltaTime);
+// 
+//                  // Breakout.Update(deltaTime);
+// 
+//                  // glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
+//                  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+//                  glClear(GL_COLOR_BUFFER_BIT);
+//                  // Breakout.Render();
+// 
+//                  glfwSwapBuffers(window);
+// 
+//                  return loop(shell, window, glfwGetTime(), currentFrame);
+//              }());
+// }
