@@ -1,0 +1,45 @@
+hey
+jawesome!
+help
+hello World
+hello there
+hell
+hell /
+asdfasdfasdfasd;fjklasdfajs;dlfkhjas;dlfas;dkjfhasdkjfhfhfhhfhfhfhfhasd;kjfahls;dfasldkfjahlsdkjfhlaksdjhfalksdjfhalsdkjfhasldk
+hey
+lol
+this
+p = new Vector3(1,2,3)
+a
+hey
+ok
+nice
+print
+print(3)
+Object
+Object.keys
+Object.keys(this)
+Object.keys(update)
+"Hello, world!"
+update
+init
+shutdown
+shutdown()
+Object
+Object.keys
+Object.keys(update)
+this
+this.keys
+Object.keys(this)
+quit()
+p
+Object.keys(p)
+Object.keys(this)
+k
+Object.keys(this)
+p
+Object.keys(this)
+version
+version()
+Vector3
+Vector3()

@@ -4,9 +4,16 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <vector>
 
 #include "shell.h"
 #include "array_buffer_allocator.h"
@@ -15,6 +22,8 @@
 #include "script_vector_3.h"
 
 using namespace v8;
+using namespace moodycamel;
+using json = nlohmann::json;
 
 void Shell::LoadMainScript(const std::string& file_name, v8::Local<v8::Context>& context) {
     v8::Local<v8::String> name(v8::String::NewFromUtf8(context->GetIsolate(),
@@ -27,7 +36,6 @@ void Shell::LoadMainScript(const std::string& file_name, v8::Local<v8::Context>&
 }
 
 Shell::Shell(int argc, char *argv[]) {
-    std::cout << "ONE" << std::endl;
     v8::V8::InitializeICU();
     v8::V8::InitializeExternalStartupData(argv[0]);
     _platform = v8::platform::CreateDefaultPlatform();
@@ -50,9 +58,12 @@ Shell::Shell(int argc, char *argv[]) {
         // v8::Context::Scope context_scope(Context());
         // RunShell(context, _platform);
     }
+
+    _debugger_thread = std::thread(&Shell::DebuggerThread, this);
+
 }
 
-void Shell::CleanUp() {
+Shell::~Shell() {
     _isolate->Dispose();
     v8::V8::Dispose();
     v8::V8::ShutdownPlatform();
@@ -99,7 +110,7 @@ void Shell::CreateShellContext() {
             v8::FunctionTemplate::New(_isolate, Version, _self)->GetFunction());    
 
 
-    LoadMainScript("test_script.js", ctxt);
+    LoadMainScript("main.js", ctxt);
 
     ScriptVector3::Create(_isolate, ctxt);
 
@@ -115,6 +126,44 @@ void Shell::Init() {
     Local<Function> func = Local<Function>::New(_isolate, _update_function);
     Handle<Value> args[1];
     Handle<Value> result = func->Call(Context()->Global(), 0, args);
+}
+
+void Shell::Poll() {
+    while (true) {
+        std::string jsExpression;
+        bool succeeded = UnevaluatedQueue.try_dequeue(jsExpression);
+        if (!succeeded) break;
+        std::cout << "expression to evaluate: " << jsExpression << std::endl;
+        std::string evaluation(Eval(jsExpression));
+        std::cout << "evaluation: " << evaluation << std::endl;
+        EvaluatedQueue.enqueue(evaluation);
+    }
+}
+
+//this should be called from the main thread? otherwise it might seg fault
+std::string Shell::Eval(std::string jsExpression) {
+    Context::Scope context_scope(Context());
+    HandleScope handle_scope(_isolate);
+    TryCatch try_catch(_isolate);
+    Local<Script> script;
+    Local<String> source = String::NewFromUtf8(_isolate,
+                                               jsExpression.c_str(),
+                                               NewStringType::kNormal).ToLocalChecked();
+    if (!Script::Compile(Context(), source).ToLocal(&script)) {
+        ReportException(_isolate, &try_catch);
+        return "oops. compile error";;
+    }
+    Local<Value> result;
+    if (!script->Run(Context()).ToLocal(&result)) {
+        assert(try_catch.HasCaught());
+        ReportException(_isolate, &try_catch);
+        return "oops. runtime error";
+    }
+    assert(!try_catch.HasCaught());
+    String::Utf8Value str(result);
+
+    std::string s(ToCString(str));
+    return s;
 }
 
 bool Shell::Update(const float elapsedTime) {
@@ -222,68 +271,6 @@ v8::MaybeLocal<v8::String> Shell::ReadFile(v8::Isolate* isolate, const char* nam
     return result;
 }
 
-void completion(const char *buf, linenoiseCompletions *lc) {
-    switch(buf[0]) {
-        case 'q': {
-            linenoiseAddCompletion(lc, "quit()");
-            break;
-        }
-        case 'l': {
-            linenoiseAddCompletion(lc, "load()");
-            break;
-        }
-        case 'r': {
-            linenoiseAddCompletion(lc, "read()");
-            break;
-        }
-        case 'p': {
-            linenoiseAddCompletion(lc, "print()");
-            break;
-        }
-        case 'v': {
-            linenoiseAddCompletion(lc, "version()");
-            break;
-        }
-        default:
-            break;
-    }
-}
-
-void Shell::RunShell(v8::Local<v8::Context> context,
-              v8::Platform* platform) {
-    std::cout << "V8 version " << v8::V8::GetVersion() << " for ZEngine version 0.1" << std::endl;
-    std::cout << "Type quit() or press CTRL-C to quit" << std::endl;
-    static const int kBufferSize = 256;
-    v8::Local<v8::String> name(
-            v8::String::NewFromUtf8(context->GetIsolate(),
-                                    "(shell)",
-                                    v8::NewStringType::kNormal).ToLocalChecked());
-
-    char *line;
-    linenoiseSetCompletionCallback(completion);
-    while (line = linenoise("ZEngine> ")) {
-        linenoiseHistoryAdd(line);
-        v8::HandleScope handle_scope(context->GetIsolate());
-        ExecuteString(
-                context->GetIsolate(),
-                v8::String::NewFromUtf8(context->GetIsolate(),
-                                        line,
-                                        v8::NewStringType::kNormal).ToLocalChecked(),
-                name,
-                true,
-                true);
-        while (v8::platform::PumpMessageLoop(_platform, context->GetIsolate()))
-            continue;
-        free(line);
-
-
-        return;
-
-
-
-    }
-}
-
 bool Shell::ExecuteString(v8::Isolate* isolate,
                    v8::Local<v8::String> source,
                    v8::Local<v8::Value> name,
@@ -355,6 +342,213 @@ void Shell::ReportException(v8::Isolate* isolate, v8::TryCatch* try_catch) {
             v8::String::Utf8Value stack_trace(stack_trace_string);
             std::string stack_trace_string(ToCString(stack_trace));
             std::cout << stack_trace_string << std::endl;
+        }
+
+    }
+
+}
+
+namespace {
+    const int debugging_port = 5858;
+    const char* const kContentLength = "Content-Length";
+    const int kContentLengthSize = strlen(kContentLength);
+
+    void SendBuffer(int socket, const std::string& message) {
+        std::string payload = message;    
+        if (payload.empty())
+            payload = "(empty)";
+        int n = send(socket, payload.c_str(), payload.size(), 0);
+    }
+
+    void SendMessage(int conn, const std::string& message) {
+        // std::string header(kContentLength);
+        // header += ": ";
+        // header += message.size();
+        // header += "\n";
+        // SendBuffer(conn, header); 
+        // SendBuffer(conn, "\n"); 
+        std::cout << "message to send: " << message << std::endl;
+        SendBuffer(conn, message); 
+    }
+
+    std::string GetRequest(int socket) {
+        int received;
+        int content_length(0);
+        std::cout << "A" << std::endl;
+        while (true) {
+            const int kHeaderBufferSize(80);
+            char header_buffer[kHeaderBufferSize];
+            int header_buffer_position(0);
+            char c =  '\0';
+
+            while(c != '\n') {
+                received = recv(socket, &c, 1, 0);
+                //assert(received >= 0);
+                if (header_buffer_position < kHeaderBufferSize)
+                    header_buffer[header_buffer_position++] = c;
+            }
+
+            std::cout << "B" << std::endl;
+            std::cout << "header_buffer_position: " << header_buffer_position << std::endl;
+            std::cout << "header_buffer: " << header_buffer << std::endl;
+
+            if (header_buffer_position == 1)
+                break;
+
+            std::cout << "C" << std::endl;
+
+            assert(header_buffer_position > 0);
+            assert(header_buffer_position <= kHeaderBufferSize);
+            header_buffer[header_buffer_position - 1] = '\0';
+
+            char* key = header_buffer;
+            char* value = nullptr;
+            for (int i(0); header_buffer[i] != '\0'; i++)
+                if (header_buffer[i] == ':') {
+                    header_buffer[i] = '\0';
+                    value = header_buffer + i + 1;
+                    while (*value == ' ')
+                        value++;
+                    break;
+                }
+
+                std::cout << "D" << std::endl;
+            std::cout << "E" << std::endl;
+
+            std::cout << "key: " << key << std::endl;
+            std::cout << "value: " << value << std::endl;
+            std::cout << "kContentLength: " << kContentLength << std::endl;
+
+            if (strcmp(key, kContentLength) == 0) {
+                if (value == nullptr || strlen(value) > 7)
+                    return std::string();
+                for (int i = 0; value[i] != '\0'; i++) {
+                    if (value[i] < '0' || value[i] > '9')
+                        return std::string();
+                    content_length = 10 * content_length + (value[i] - '0');
+                }
+            }
+            else
+                std::cout << key
+                          << ": "
+                          << (value != nullptr ? value : "(no value)")
+                          << std::endl;
+        }
+
+        std::cout << "F" << std::endl;
+
+
+        if (content_length == 0)
+            return std::string();
+
+        std::cout << "G" << std::endl;
+
+        std::string buffer;
+        buffer.resize(content_length);
+        received = recv(socket, &buffer[0], content_length, 0);
+        std::cout << "H" << std::endl;
+        if (received < content_length) {
+            std::cout << "Error request data size" << std::endl;
+            return std::string();
+        }
+        std::cout << "I" << std::endl;
+        buffer[content_length] = '\0';
+        return buffer;
+    }
+
+    template<typename S>
+    std::vector<uint16_t> ToUInt16Vector(const S& str) {
+        size_t s = str.size();
+        std::vector<uint16_t> data(s);
+
+        for (size_t i(0); i < s; ++i) {
+            if (str[i] != 0)
+                data[i] = static_cast<uint16_t>(str[i]);
+            else
+                data[i] = ' ';
+        }
+
+        return data;
+    }
+}
+
+int Shell::_main_debug_client_socket = -1;
+
+void Shell::DebuggerThread() {
+    std::cout << "Begin debugger thread" << std::endl;
+    // std::cout << "ONE" << std::endl;
+
+    
+    int sockfd, client_socket, portno;
+    socklen_t clilen;
+    sockaddr_in serv_addr, cli_addr;
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    assert(sockfd >= 0);
+
+    int yes=1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) == -1) {
+        perror("setsockopt");
+        exit(1);
+    }
+
+    portno = debugging_port;
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_addr.s_addr = INADDR_ANY;;
+    serv_addr.sin_port = htons(portno);
+    int bindResult = bind(sockfd, reinterpret_cast<sockaddr *>(&serv_addr), sizeof(serv_addr));
+    // assert(bindResult >= 0);
+    if (bindResult < 0) {
+    }
+
+    listen(sockfd, 5);
+    clilen = sizeof(cli_addr);
+
+    std::cout << "TWO" << std::endl;
+
+    while (1) {
+        client_socket = accept(sockfd, reinterpret_cast<sockaddr *>(&cli_addr), &clilen);
+        assert(client_socket >= 0);
+        _main_debug_client_socket = client_socket;
+        std::cout << "Client connected to debugger" << std::endl;
+
+        SendBuffer(client_socket, "Type: connect\n");
+        SendBuffer(client_socket,
+                std::string("V8-Version: ") + std::string(V8::GetVersion()) + std::string("\n"));
+        SendBuffer(client_socket, "Protocol-Version: 1\n");
+        SendBuffer(client_socket, std::string("Embedding-Host: ZEngine\n"));
+        SendBuffer(client_socket, "Content-Length: 0\n");
+        SendBuffer(client_socket, "\n");
+
+        std::cout << "THREE" << std::endl;
+
+        while (1) {
+            std::string request = GetRequest(client_socket);
+
+            if (request.empty())
+                continue;
+
+            std::cout << "FOUR" << std::endl;
+
+            std::cout << "request: " << request << std::endl;
+
+            json j_request = json::parse(request);
+            std::string jsExpression = j_request["arguments"]["expression"];
+
+            std::cout << "jsExpression: " << jsExpression << std::endl;
+
+            UnevaluatedQueue.enqueue(jsExpression);
+            while (true) {
+                std::string evaluated;
+                bool succeeded = EvaluatedQueue.try_dequeue(evaluated);
+                if (succeeded) {
+                    std::cout << "response: " << evaluated << std::endl;
+                    SendMessage(client_socket, evaluated);
+                    break;
+                }
+            }
+
+            std::cout << "FIVE" << std::endl;
         }
 
     }

@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
         currentFrame = glfwGetTime();
         GLfloat deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        // shell.Poll();
+        shell.Poll();
         shell.Update(deltaTime);
     }
     return 0;
