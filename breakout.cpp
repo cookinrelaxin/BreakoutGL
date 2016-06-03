@@ -15,6 +15,11 @@
 
 #include "shell.h"
 
+#include "zscene_node.h"
+
+#include <thread>
+#include <chrono>
+
 enum ExitStatus {
     ExitOK,
     ExitError
@@ -23,12 +28,7 @@ enum ExitStatus {
 ExitStatus loop(Shell shell, GLFWwindow* window, GLfloat currentFrame, GLfloat lastFrame);
 
 // Window dimensions
-// const GLuint SCREEN_WIDTH(1600), SCREEN_HEIGHT(1200);
-const GLuint SCREEN_WIDTH = 1600, SCREEN_HEIGHT = 1200;
-
-// Game Breakout(SCREEN_WIDTH, SCREEN_HEIGHT);
-
-// ScriptManager scriptManager;
+const GLuint SCREEN_WIDTH(1600), SCREEN_HEIGHT(1200);
 
 GLFWwindow* create_window() {
     std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
@@ -80,16 +80,14 @@ void configureWindow(GLFWwindow* window) {
 }
 
 int main(int argc, char *argv[]) {
-    // GLFWwindow* window = create_window();
-    // configureWindow(window);
+    GLFWwindow* window = create_window();
+    configureWindow(window);
 
-    // configure_glew();
-    // configureGL();
+    configure_glew();
+    configureGL();
 
-    // Breakout.Init();
-    Shell shell(argc, argv);;
-    // shell.init(argc, argv);
-    shell.Init();
+    Shell shell(argc, argv);
+    ZSceneNode* scene = shell.Init();
 
     GLfloat currentFrame = glfwGetTime();
     GLfloat lastFrame = currentFrame;
@@ -98,35 +96,13 @@ int main(int argc, char *argv[]) {
         currentFrame = glfwGetTime();
         GLfloat deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
-        shell.Poll();
         shell.Update(deltaTime);
+        shell.Poll();
+
+        glm::vec4 clear = scene->get_background_color();
+        glClearColor(clear.x, clear.y, clear.z, clear.w);
+        glClear(GL_COLOR_BUFFER_BIT);
+        glfwSwapBuffers(window);
     }
     return 0;
 }
-
-// ExitStatus loop(Shell &shell, GLFWwindow * window, GLfloat currentFrame, GLfloat lastFrame) {
-//    return (glfwWindowShouldClose(window)
-//            ? ExitOK
-//            : [=]() {
-//                  GLfloat deltaTime = currentFrame - lastFrame;
-// 
-//                  glfwPollEvents();
-// 
-//                  shell.Update(deltaTime);
-//                  // scriptManager.PollShell();
-//                  // scriptManager.Render();
-// 
-//                  // Breakout.ProcessInput(deltaTime);
-// 
-//                  // Breakout.Update(deltaTime);
-// 
-//                  // glClearColor(0.3f, 0.2f, 0.1f, 1.0f);
-//                  glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-//                  glClear(GL_COLOR_BUFFER_BIT);
-//                  // Breakout.Render();
-// 
-//                  glfwSwapBuffers(window);
-// 
-//                  return loop(shell, window, glfwGetTime(), currentFrame);
-//              }());
-// }

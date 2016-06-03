@@ -18,12 +18,22 @@
 #include "shell.h"
 #include "array_buffer_allocator.h"
 
-#include "script_object_wrap.h"
-#include "script_vector_3.h"
+#include "znode.h"
+#include "zsprite_node.h"
+#include "zscene_node.h"
+
+#include "v8pp/object.hpp"
+#include "v8pp/module.hpp"
+#include "v8pp/class.hpp"
 
 using namespace v8;
 using namespace moodycamel;
 using json = nlohmann::json;
+
+v8::Local<v8::Object>       Shell::_self;
+v8::Isolate*                Shell::_isolate;
+v8::Persistent<v8::Context> Shell::_global_context;
+v8::Platform*               Shell::_platform;
 
 void Shell::LoadMainScript(const std::string& file_name, v8::Local<v8::Context>& context) {
     v8::Local<v8::String> name(v8::String::NewFromUtf8(context->GetIsolate(),
@@ -55,8 +65,6 @@ Shell::Shell(int argc, char *argv[]) {
         if (Context().IsEmpty()) {
             throw std::runtime_error("Error creating context");
         }
-        // v8::Context::Scope context_scope(Context());
-        // RunShell(context, _platform);
     }
 
     _debugger_thread = std::thread(&Shell::DebuggerThread, this);
@@ -110,22 +118,114 @@ void Shell::CreateShellContext() {
             v8::FunctionTemplate::New(_isolate, Version, _self)->GetFunction());    
 
 
-    LoadMainScript("main.js", ctxt);
 
-    ScriptVector3::Create(_isolate, ctxt);
+    v8pp::class_<glm::vec2> vec2_class(_isolate);
+    vec2_class
+        .ctor<float, float>()
+        .set("x", &glm::vec2::x)
+        .set("y", &glm::vec2::y)
+        ;
+
+    v8pp::class_<glm::vec3> vec3_class(_isolate);
+    vec3_class
+        .ctor<float, float, float>()
+        .set("x", &glm::vec3::x)
+        .set("y", &glm::vec3::y)
+        .set("z", &glm::vec3::z)
+        ;
+
+    v8pp::class_<glm::vec4> vec4_class(_isolate);
+    vec4_class
+        .ctor<float, float, float, float>()
+        .set("x", &glm::vec4::x)
+        .set("y", &glm::vec4::y)
+        .set("z", &glm::vec4::z)
+        .set("w", &glm::vec4::w)
+        ;
+
+    v8pp::class_<ZNode> znode_class(_isolate);
+    znode_class
+        .ctor<>()
+        .set("position", v8pp::property(&ZNode::get_position, &ZNode::set_position))
+        ;
+
+    v8pp::class_<ZSpriteNode> zsprite_node_class(_isolate);
+    zsprite_node_class
+        .ctor<>()
+        .inherit<ZNode>()
+        .set("color", &ZSpriteNode::color)
+        ;
+
+    v8pp::class_<ZSceneNode> zscene_node_class(_isolate);
+    zscene_node_class
+        .ctor<>()
+        .inherit<ZNode>()
+        .set("backgroundColor",
+                v8pp::property(
+                    &ZSceneNode::get_background_color,
+                    &ZSceneNode::set_background_color))
+        ;
+
+    v8pp::module m(_isolate);
+    m
+        .set("Vec2", vec2_class)
+        .set("Vec3", vec3_class)
+        .set("Vec4", vec4_class)
+        .set("Node", znode_class)
+        .set("SpriteNode", zsprite_node_class)
+        .set("SceneNode", zscene_node_class)
+        ;
+
+    ctxt->Global()->Set(
+            v8::String::NewFromUtf8(_isolate, "ZEngine"),
+            m.new_instance());
+
+    LoadMainScript("main.js", ctxt);
 
     GlobalFunction _init_function = GetGlobalFunction("init");
     GlobalFunction _update_function = GetGlobalFunction("update");
     GlobalFunction _shutdown_function = GetGlobalFunction("shutdown");
 }
 
-void Shell::Init() {
+ZNode::ZNode() : pos_(0,0) {
+    v8pp::class_<glm::vec2>::reference_external(Shell::_isolate, &pos_);
+}
+
+ZNode::~ZNode() {
+    // v8pp::class_<glm::vec2>::unreference_external(Shell::_isolate, &pos_);
+}
+
+ZSpriteNode::ZSpriteNode() {
+    // v8pp::class_<glm::vec4>::reference_external(Shell::_isolate, &color_);
+}
+
+ZSpriteNode::~ZSpriteNode() {
+    // v8pp::class_<glm::vec4>::unreference_external(Shell::_isolate, &color_);
+}
+
+ZSceneNode::ZSceneNode() : background_color_(0,0,0,0), temp("booga") {
+    v8pp::class_<glm::vec4>::reference_external(Shell::_isolate, &background_color_);
+}
+
+ZSceneNode::~ZSceneNode() {
+    v8pp::class_<glm::vec4>::unreference_external(Shell::_isolate, &background_color_);
+}
+
+ZSceneNode* Shell::Init() {
     v8::Context::Scope context_scope(Context());
     HandleScope scope(_isolate);
     GlobalFunction _update_function = GetGlobalFunction("init");
     Local<Function> func = Local<Function>::New(_isolate, _update_function);
     Handle<Value> args[1];
     Handle<Value> result = func->Call(Context()->Global(), 0, args);
+
+    ZSceneNode *scene = &v8pp::from_v8<ZSceneNode>(_isolate, result);
+    std::cout << "scene->get_background_color().x: " << scene->get_background_color().x << std::endl;
+    std::cout << "scene->get_background_color().y: " << scene->get_background_color().y << std::endl;
+    std::cout << "scene->get_background_color().z: " << scene->get_background_color().z << std::endl;
+    std::cout << "scene->get_background_color().w: " << scene->get_background_color().w << std::endl;
+
+    return scene;
 }
 
 void Shell::Poll() {
@@ -140,7 +240,6 @@ void Shell::Poll() {
     }
 }
 
-//this should be called from the main thread? otherwise it might seg fault
 std::string Shell::Eval(std::string jsExpression) {
     Context::Scope context_scope(Context());
     HandleScope handle_scope(_isolate);
@@ -361,20 +460,12 @@ namespace {
     }
 
     void SendMessage(int conn, const std::string& message) {
-        // std::string header(kContentLength);
-        // header += ": ";
-        // header += message.size();
-        // header += "\n";
-        // SendBuffer(conn, header); 
-        // SendBuffer(conn, "\n"); 
-        std::cout << "message to send: " << message << std::endl;
         SendBuffer(conn, message); 
     }
 
     std::string GetRequest(int socket) {
         int received;
         int content_length(0);
-        std::cout << "A" << std::endl;
         while (true) {
             const int kHeaderBufferSize(80);
             char header_buffer[kHeaderBufferSize];
@@ -388,14 +479,8 @@ namespace {
                     header_buffer[header_buffer_position++] = c;
             }
 
-            std::cout << "B" << std::endl;
-            std::cout << "header_buffer_position: " << header_buffer_position << std::endl;
-            std::cout << "header_buffer: " << header_buffer << std::endl;
-
             if (header_buffer_position == 1)
                 break;
-
-            std::cout << "C" << std::endl;
 
             assert(header_buffer_position > 0);
             assert(header_buffer_position <= kHeaderBufferSize);
@@ -411,13 +496,6 @@ namespace {
                         value++;
                     break;
                 }
-
-                std::cout << "D" << std::endl;
-            std::cout << "E" << std::endl;
-
-            std::cout << "key: " << key << std::endl;
-            std::cout << "value: " << value << std::endl;
-            std::cout << "kContentLength: " << kContentLength << std::endl;
 
             if (strcmp(key, kContentLength) == 0) {
                 if (value == nullptr || strlen(value) > 7)
@@ -435,40 +513,18 @@ namespace {
                           << std::endl;
         }
 
-        std::cout << "F" << std::endl;
-
-
         if (content_length == 0)
             return std::string();
-
-        std::cout << "G" << std::endl;
 
         std::string buffer;
         buffer.resize(content_length);
         received = recv(socket, &buffer[0], content_length, 0);
-        std::cout << "H" << std::endl;
         if (received < content_length) {
             std::cout << "Error request data size" << std::endl;
             return std::string();
         }
-        std::cout << "I" << std::endl;
         buffer[content_length] = '\0';
         return buffer;
-    }
-
-    template<typename S>
-    std::vector<uint16_t> ToUInt16Vector(const S& str) {
-        size_t s = str.size();
-        std::vector<uint16_t> data(s);
-
-        for (size_t i(0); i < s; ++i) {
-            if (str[i] != 0)
-                data[i] = static_cast<uint16_t>(str[i]);
-            else
-                data[i] = ' ';
-        }
-
-        return data;
     }
 }
 
@@ -476,8 +532,6 @@ int Shell::_main_debug_client_socket = -1;
 
 void Shell::DebuggerThread() {
     std::cout << "Begin debugger thread" << std::endl;
-    // std::cout << "ONE" << std::endl;
-
     
     int sockfd, client_socket, portno;
     socklen_t clilen;
@@ -497,14 +551,9 @@ void Shell::DebuggerThread() {
     serv_addr.sin_addr.s_addr = INADDR_ANY;;
     serv_addr.sin_port = htons(portno);
     int bindResult = bind(sockfd, reinterpret_cast<sockaddr *>(&serv_addr), sizeof(serv_addr));
-    // assert(bindResult >= 0);
-    if (bindResult < 0) {
-    }
 
     listen(sockfd, 5);
     clilen = sizeof(cli_addr);
-
-    std::cout << "TWO" << std::endl;
 
     while (1) {
         client_socket = accept(sockfd, reinterpret_cast<sockaddr *>(&cli_addr), &clilen);
@@ -520,35 +569,25 @@ void Shell::DebuggerThread() {
         SendBuffer(client_socket, "Content-Length: 0\n");
         SendBuffer(client_socket, "\n");
 
-        std::cout << "THREE" << std::endl;
-
         while (1) {
             std::string request = GetRequest(client_socket);
 
             if (request.empty())
                 continue;
 
-            std::cout << "FOUR" << std::endl;
-
-            std::cout << "request: " << request << std::endl;
-
             json j_request = json::parse(request);
             std::string jsExpression = j_request["arguments"]["expression"];
-
-            std::cout << "jsExpression: " << jsExpression << std::endl;
 
             UnevaluatedQueue.enqueue(jsExpression);
             while (true) {
                 std::string evaluated;
                 bool succeeded = EvaluatedQueue.try_dequeue(evaluated);
                 if (succeeded) {
-                    std::cout << "response: " << evaluated << std::endl;
                     SendMessage(client_socket, evaluated);
                     break;
                 }
             }
 
-            std::cout << "FIVE" << std::endl;
         }
 
     }

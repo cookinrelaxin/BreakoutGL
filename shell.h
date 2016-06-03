@@ -13,6 +13,8 @@
 #include "readerwriterqueue.h"
 #include "atomicops.h"
 
+#include "zscene_node.h"
+
 typedef v8::Persistent<v8::Function,
                        v8::CopyablePersistentTraits<v8::Function>> GlobalFunction;
 typedef v8::Persistent<v8::Function,
@@ -28,12 +30,8 @@ class Shell {
     public:
         Shell(int argc, char *argv[]);
         ~Shell();
-        // int init(int argc, char *argv[]);
         void LoadMainScript(const std::string& file_name, v8::Local<v8::Context>& context);
         void CreateShellContext();
-        // void RunShell(v8::Local<v8::Context> context,
-        //               v8::Platform* platform
-        // );
         static bool ExecuteString(v8::Isolate* isolate,
                            v8::Local<v8::String> source,
                            v8::Local<v8::Value> name,
@@ -46,7 +44,7 @@ class Shell {
         static void Quit(const v8::FunctionCallbackInfo<v8::Value>& args);
         static void Version(const v8::FunctionCallbackInfo<v8::Value>& args);
 
-        void Init();
+        ZSceneNode* Init();
         void Poll();
         std::string Eval(std::string jsExpression);
         bool Update(const float elapsedTime);
@@ -56,6 +54,11 @@ class Shell {
         );
         static void ReportException(v8::Isolate* isolate, v8::TryCatch* handler);
         GlobalFunction GetGlobalFunction(const std::string& functionName);
+
+        static v8::Local<v8::Object> _self;
+        static v8::Isolate* _isolate;
+        static v8::Persistent<v8::Context> _global_context;
+        static v8::Platform* _platform;
 
 
     private:
@@ -67,10 +70,6 @@ class Shell {
             return StrongPersistentToLocal(_global_context);
         }
 
-        v8::Local<v8::Object> _self;
-        v8::Isolate* _isolate;
-        v8::Persistent<v8::Context> _global_context;
-        v8::Platform* _platform;
 
         std::thread _debugger_thread;
         static int _main_debug_client_socket;
@@ -79,9 +78,5 @@ class Shell {
 
         moodycamel::ReaderWriterQueue<std::string> UnevaluatedQueue;
         moodycamel::ReaderWriterQueue<std::string> EvaluatedQueue;
-
-
-
-        
 };
 #endif

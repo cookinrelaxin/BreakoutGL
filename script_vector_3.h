@@ -122,4 +122,3 @@ class ScriptVector3 : public ScriptObjectWrap {
 Persistent<Function> ScriptVector3::_constructor;
 
 #endif
-

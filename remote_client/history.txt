@@ -1,45 +1,100 @@
-hey
-jawesome!
-help
-hello World
-hello there
-hell
-hell /
-asdfasdfasdfasd;fjklasdfajs;dlfkhjas;dlfas;dkjfhasdkjfhfhfhhfhfhfhfhasd;kjfahls;dfasldkfjahlsdkjfhlaksdjhfalksdjfhalsdkjfhasldk
-hey
-lol
-this
-p = new Vector3(1,2,3)
-a
-hey
-ok
-nice
-print
-print(3)
-Object
-Object.keys
+n.backgroundColor.x
+n.backgroundColor = new Vector4(1.0,2.3,456,12)
+n.backgroundColor = new Vec4(1.0,2.3,456,12)
+n.backgroundColor = new ZEngine.Vec4(1.0,2.3,456,12)
+n.backgroundColor.x
+let v = new ZEngine.Vec4(1.0,2.0,3.0,4.0)
+v.x
+v.y
+v.z
+v.w
+v.r
+let n = new ZEngine.SceneNode()
+n.backgroundColor = v
+n.backgroundColor.x
+let a = new ZEngine.Node()
+a.position.x = 3
+a.position.x
+a.position = ZEngine.Vec2(5,6)
+a.position.x
+a.position = new ZEngine.Vec2(5,6)
+a.position.x
+a.position.y
+let a = new ZEngine.Node()
+a.position = new ZEngine.Vec2(5,6)
+a.position.x
+a.position.y
+let n = new ZEngine.SceneNode()
+n.backgroundColor = new ZEngine.vec4(1,2,3,4)
+n.backgroundColor = new ZEngine.Vec4(1,2,3,4)
+n.backgroundColor.x
+n.backgroundColor.y
+n.backgroundColor.z
+n.backgroundColor.w
 Object.keys(this)
-Object.keys(update)
-"Hello, world!"
-update
-init
-shutdown
-shutdown()
-Object
-Object.keys
-Object.keys(update)
-this
-this.keys
-Object.keys(this)
-quit()
-p
-Object.keys(p)
-Object.keys(this)
-k
-Object.keys(this)
-p
-Object.keys(this)
-version
-version()
-Vector3
-Vector3()
+n.backgroundColor.x = 0
+n.backgroundColor.x
+n.backgroundColor.y
+n.backgroundColor.x = 0
+n.backgroundColor.y
+n.backgroundColor.x
+n.backgroundColor.y
+n.backgroundColor.x
+n.backgroundColor.z
+n.backgroundColor.w
+n.backgroundColor.x = 0
+n.backgroundColor.x
+n.backgroundColor.y = 0
+n.backgroundColor.x = 0
+n.backgroundColor.x = 1
+n.backgroundColor.x = 0
+Math.sin(1)
+n.backgroundColor.x = 0
+n.backgroundColor.x = 1
+n.backgroundColor.x = 0
+n.backgroundColor.y = 0
+n.backgroundColor.y = 1
+n.backgroundColor.y = 0
+n.backgroundColor.y = 1
+n.backgroundColor.z = 0
+n.backgroundColor.x = 0
+n.backgroundColor.z = 0
+n.backgroundColor.x = 0
+n.backgroundColor.x = 1
+n.backgroundColor.z = 1
+n.backgroundColor.z = 0
+n.backgroundColor.z = 1
+n.backgroundColor.x = 0
+n.backgroundColor.x = 1
+n.backgroundColor.y = 0
+n.backgroundColor.y = 1
+n.backgroundColor.x = 1
+n.backgroundColor.x = 0
+n.backgroundColor.x = 1
+Math.random()
+n.backgroundColor.x = 0
+n.backgroundColor.x = .5
+n.backgroundColor.x = .75
+n.backgroundColor.x = .25
+n.backgroundColor.y = .75
+n.backgroundColor.x = .75
+n.backgroundColor.x = 5
+n.backgroundColor.x = .5
+n.backgroundColor.x = .1
+n.backgroundColor.x = 0
+n.backgroundColor.y = 0
+n.backgroundColor.z = 0
+n.backgroundColor.w = 0
+n.backgroundColor.w = 
+n.backgroundColor.x = 0
+n.backgroundColor.x = 1
+n.backgroundColor.x = .25
+n.backgroundColor.y = .25
+n.backgroundColor.z = .25
+n.backgroundColor.z = .5
+n.backgroundColor.y = .75
+n.backgroundColor.y = .9
+n.backgroundColor.y = .2
+n.backgroundColor.y = .3
+n.backgroundColor.y = .5
+n.backgroundColor.y = .6

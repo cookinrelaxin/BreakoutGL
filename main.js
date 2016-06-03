@@ -1,12 +1,13 @@
-p = new Vector3(1,2,3);
+var n = new ZEngine.SceneNode();
 function init() {
-    print("CALL FROM INSIDE INIT");
+    n.backgroundColor = ZEngine.Vec4(1.0, 1.0, 1.0, 1.0);
+    return n;
 }
 
 function update(dt) {
-    // print("CALL FROM INSIDE UPDATE: ", dt);
+    return true;
 }
 
 function shutdown() {
-    print("CALL FROM INSIDE SHUTDOWN");
+    return true;
 }
