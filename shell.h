@@ -8,6 +8,8 @@
 #include <glm/glm.hpp>
 
 #include <thread>
+#include <atomic>
+
 #include "json.hpp"
 
 #include "readerwriterqueue.h"
@@ -30,6 +32,9 @@ class Shell {
     public:
         Shell(int argc, char *argv[]);
         ~Shell();
+
+        void UninitializeV8();
+        static std::atomic<bool> terminateServer;
         void LoadMainScript(const std::string& file_name, v8::Local<v8::Context>& context);
         void CreateShellContext();
         static bool ExecuteString(v8::Isolate* isolate,
@@ -48,6 +53,8 @@ class Shell {
         void Poll();
         std::string Eval(std::string jsExpression);
         bool Update(const float elapsedTime);
+        void KeyDown(int key);
+        void KeyUp(int key);
         
         static v8::MaybeLocal<v8::String> ReadFile(v8::Isolate* isolate,
                                             const char* name

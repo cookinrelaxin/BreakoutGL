@@ -1,17 +1,28 @@
 #ifndef ZSPRITE_NODE_H
 #define ZSPRITE_NODE_H
 
+#include <string>
+
 #include <glm/glm.hpp>
+
+#include "znode.h"
 
 class ZSpriteNode : public ZNode {
     public:
         ZSpriteNode();
         ~ZSpriteNode();
         //COLOR
-        glm::vec4& color() { return color_; }
+        glm::vec4& get_color();
+        void       set_color(glm::vec4 new_color);
 
-    private:
+        std::string get_texture();
+        void        set_texture(std::string texture_path);
+
+        void draw(SpriteRenderer& renderer);
+
+    protected:
         glm::vec4 color_;
+        std::string texture_name_;
 };
 
 #endif

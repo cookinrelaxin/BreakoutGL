@@ -6,6 +6,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
@@ -22,9 +23,13 @@
 #include "zsprite_node.h"
 #include "zscene_node.h"
 
+#include "console.h"
+
 #include "v8pp/object.hpp"
 #include "v8pp/module.hpp"
 #include "v8pp/class.hpp"
+
+#include <GLFW/glfw3.h>
 
 using namespace v8;
 using namespace moodycamel;
@@ -34,6 +39,7 @@ v8::Local<v8::Object>       Shell::_self;
 v8::Isolate*                Shell::_isolate;
 v8::Persistent<v8::Context> Shell::_global_context;
 v8::Platform*               Shell::_platform;
+std::atomic<bool>           Shell::terminateServer;
 
 void Shell::LoadMainScript(const std::string& file_name, v8::Local<v8::Context>& context) {
     v8::Local<v8::String> name(v8::String::NewFromUtf8(context->GetIsolate(),
@@ -42,7 +48,7 @@ void Shell::LoadMainScript(const std::string& file_name, v8::Local<v8::Context>&
 
     v8::Local<v8::String> src;
     Shell::ReadFile(_isolate, file_name.c_str()).ToLocal(&src);
-    Shell::ExecuteString(_isolate, src, name, false, false);
+    Shell::ExecuteString(_isolate, src, name, false, true);
 }
 
 Shell::Shell(int argc, char *argv[]) {
@@ -72,10 +78,18 @@ Shell::Shell(int argc, char *argv[]) {
 }
 
 Shell::~Shell() {
-    _isolate->Dispose();
-    v8::V8::Dispose();
-    v8::V8::ShutdownPlatform();
-    delete _platform;
+    UninitializeV8();
+}
+
+void Shell::UninitializeV8() {
+    terminateServer = true;
+    if (_debugger_thread.joinable()) _debugger_thread.join();
+    // v8::Isolate::Scope isolate_scope(_isolate);
+    // _isolate->Exit();
+    // _isolate->Dispose();
+    // v8::V8::Dispose();
+    // v8::V8::ShutdownPlatform();
+    // delete _platform;
 }
 
 GlobalFunction Shell::GetGlobalFunction(const std::string& functionName) {
@@ -97,9 +111,9 @@ void Shell::CreateShellContext() {
     _self = t->NewInstance();
     _self->SetInternalField(0, External::New(_isolate, this));
 
-    ctxt->Global()->Set(
-            v8::String::NewFromUtf8(_isolate, "print"),
-            v8::FunctionTemplate::New(_isolate, Print, _self)->GetFunction());    
+    // ctxt->Global()->Set(
+    //         v8::String::NewFromUtf8(_isolate, "print"),
+    //         v8::FunctionTemplate::New(_isolate, Print, _self)->GetFunction());    
 
     ctxt->Global()->Set(
             v8::String::NewFromUtf8(_isolate, "read"),
@@ -147,13 +161,23 @@ void Shell::CreateShellContext() {
     znode_class
         .ctor<>()
         .set("position", v8pp::property(&ZNode::get_position, &ZNode::set_position))
+        .set("zPosition", v8pp::property(&ZNode::get_zposition, &ZNode::set_zposition))
+        .set("size", v8pp::property(&ZNode::get_size, &ZNode::set_size))
+        .set("name", v8pp::property(&ZNode::get_name, &ZNode::set_name))
+        .set("addChild", &ZNode::add_child)
+        .set("getChild", &ZNode::add_child)
         ;
 
     v8pp::class_<ZSpriteNode> zsprite_node_class(_isolate);
     zsprite_node_class
         .ctor<>()
         .inherit<ZNode>()
-        .set("color", &ZSpriteNode::color)
+        .set("color", v8pp::property(
+                        &ZSpriteNode::get_color,
+                        &ZSpriteNode::set_color))
+        .set("texture", v8pp::property(
+                            &ZSpriteNode::get_texture,
+                            &ZSpriteNode::set_texture))
         ;
 
     v8pp::class_<ZSceneNode> zscene_node_class(_isolate);
@@ -176,39 +200,152 @@ void Shell::CreateShellContext() {
         .set("SceneNode", zscene_node_class)
         ;
 
+    //KEY VALUES
+    m
+        .set_const("KEY_UNKNOWN",    GLFW_KEY_UNKNOWN)
+        .set_const("KEY_SPACE",      GLFW_KEY_SPACE)
+        .set_const("KEY_APOSTROPHE", GLFW_KEY_APOSTROPHE)
+        .set_const("KEY_COMMA",      GLFW_KEY_COMMA)
+        .set_const("KEY_MINUS",      GLFW_KEY_MINUS)
+        .set_const("KEY_PERIOD",     GLFW_KEY_PERIOD)
+        .set_const("KEY_SLASH",      GLFW_KEY_SLASH)
+
+        .set_const("KEY_0", GLFW_KEY_0)
+        .set_const("KEY_1", GLFW_KEY_1)
+        .set_const("KEY_2", GLFW_KEY_2)
+        .set_const("KEY_3", GLFW_KEY_3)
+        .set_const("KEY_4", GLFW_KEY_4)
+        .set_const("KEY_5", GLFW_KEY_5)
+        .set_const("KEY_6", GLFW_KEY_6)
+        .set_const("KEY_7", GLFW_KEY_7)
+        .set_const("KEY_8", GLFW_KEY_8)
+        .set_const("KEY_9", GLFW_KEY_9)
+
+        .set_const("KEY_SEMICOLON", GLFW_KEY_SEMICOLON)
+        .set_const("KEY_EQUAL", GLFW_KEY_EQUAL)
+
+        .set_const("KEY_A", GLFW_KEY_A)
+        .set_const("KEY_B", GLFW_KEY_B)
+        .set_const("KEY_C", GLFW_KEY_C)
+        .set_const("KEY_D", GLFW_KEY_D)
+        .set_const("KEY_E", GLFW_KEY_E)
+        .set_const("KEY_F", GLFW_KEY_F)
+        .set_const("KEY_G", GLFW_KEY_G)
+        .set_const("KEY_H", GLFW_KEY_H)
+        .set_const("KEY_I", GLFW_KEY_I)
+        .set_const("KEY_J", GLFW_KEY_J)
+        .set_const("KEY_K", GLFW_KEY_K)
+        .set_const("KEY_L", GLFW_KEY_L)
+        .set_const("KEY_M", GLFW_KEY_M)
+        .set_const("KEY_N", GLFW_KEY_N)
+        .set_const("KEY_O", GLFW_KEY_O)
+        .set_const("KEY_P", GLFW_KEY_P)
+        .set_const("KEY_Q", GLFW_KEY_Q)
+        .set_const("KEY_R", GLFW_KEY_R)
+        .set_const("KEY_S", GLFW_KEY_S)
+        .set_const("KEY_T", GLFW_KEY_T)
+        .set_const("KEY_U", GLFW_KEY_U)
+        .set_const("KEY_V", GLFW_KEY_V)
+        .set_const("KEY_W", GLFW_KEY_W)
+        .set_const("KEY_X", GLFW_KEY_X)
+        .set_const("KEY_Y", GLFW_KEY_Y)
+        .set_const("KEY_Z", GLFW_KEY_Z)
+
+        .set_const("KEY_LEFT_BRACKET",  GLFW_KEY_LEFT_BRACKET)
+        .set_const("KEY_BACKSLASH",     GLFW_KEY_BACKSLASH)
+        .set_const("KEY_RIGHT_BRACKET", GLFW_KEY_RIGHT_BRACKET)
+        .set_const("KEY_GRAVE_ACCENT",  GLFW_KEY_GRAVE_ACCENT)
+        .set_const("KEY_WORLD_1",       GLFW_KEY_WORLD_1)
+        .set_const("KEY_WORLD_2",       GLFW_KEY_WORLD_2)
+        .set_const("KEY_ESCAPE",        GLFW_KEY_ESCAPE)
+        .set_const("KEY_ENTER",         GLFW_KEY_ENTER)
+        .set_const("KEY_TAB",           GLFW_KEY_TAB)
+        .set_const("KEY_BACKSPACE",     GLFW_KEY_BACKSPACE)
+        .set_const("KEY_INSERT",        GLFW_KEY_INSERT)
+        .set_const("KEY_DELETE",        GLFW_KEY_DELETE)
+
+        .set_const("KEY_RIGHT",         GLFW_KEY_RIGHT)
+        .set_const("KEY_LEFT",          GLFW_KEY_LEFT)
+        .set_const("KEY_DOWN",          GLFW_KEY_DOWN)
+        .set_const("KEY_UP",            GLFW_KEY_UP)
+
+        .set_const("KEY_PAGE_UP",       GLFW_KEY_PAGE_UP)
+        .set_const("KEY_PAGE_DOWN",     GLFW_KEY_PAGE_DOWN)
+        .set_const("KEY_HOME",          GLFW_KEY_HOME)
+        .set_const("KEY_END",           GLFW_KEY_END)
+
+        .set_const("KEY_CAPS_LOCK",   GLFW_KEY_CAPS_LOCK)
+        .set_const("KEY_SCROLL_LOCK", GLFW_KEY_SCROLL_LOCK)
+        .set_const("KEY_NUM_LOCK",    GLFW_KEY_NUM_LOCK)
+
+        .set_const("KEY_PRINT_SCREEN", GLFW_KEY_PRINT_SCREEN)
+        .set_const("KEY_PAUSE",        GLFW_KEY_PAUSE)
+
+        .set_const("KEY_F1",  GLFW_KEY_F1)
+        .set_const("KEY_F2",  GLFW_KEY_F2)
+        .set_const("KEY_F3",  GLFW_KEY_F3)
+        .set_const("KEY_F4",  GLFW_KEY_F4)
+        .set_const("KEY_F5",  GLFW_KEY_F5)
+        .set_const("KEY_F6",  GLFW_KEY_F6)
+        .set_const("KEY_F7",  GLFW_KEY_F7)
+        .set_const("KEY_F8",  GLFW_KEY_F8)
+        .set_const("KEY_F9",  GLFW_KEY_F9)
+        .set_const("KEY_F10", GLFW_KEY_F10)
+        .set_const("KEY_F11", GLFW_KEY_F11)
+        .set_const("KEY_F12", GLFW_KEY_F12)
+        .set_const("KEY_F13", GLFW_KEY_F13)
+        .set_const("KEY_F14", GLFW_KEY_F14)
+        .set_const("KEY_F15", GLFW_KEY_F15)
+        .set_const("KEY_F16", GLFW_KEY_F16)
+        .set_const("KEY_F17", GLFW_KEY_F17)
+        .set_const("KEY_F18", GLFW_KEY_F18)
+        .set_const("KEY_F19", GLFW_KEY_F19)
+        .set_const("KEY_F20", GLFW_KEY_F20)
+        .set_const("KEY_F21", GLFW_KEY_F21)
+        .set_const("KEY_F22", GLFW_KEY_F22)
+        .set_const("KEY_F23", GLFW_KEY_F23)
+        .set_const("KEY_F24", GLFW_KEY_F24)
+        .set_const("KEY_F25", GLFW_KEY_F25)
+
+        .set_const("KEY_KP_0", GLFW_KEY_KP_0)
+        .set_const("KEY_KP_1", GLFW_KEY_KP_1)
+        .set_const("KEY_KP_2", GLFW_KEY_KP_2)
+        .set_const("KEY_KP_3", GLFW_KEY_KP_3)
+        .set_const("KEY_KP_4", GLFW_KEY_KP_4)
+        .set_const("KEY_KP_5", GLFW_KEY_KP_5)
+        .set_const("KEY_KP_6", GLFW_KEY_KP_6)
+        .set_const("KEY_KP_7", GLFW_KEY_KP_7)
+        .set_const("KEY_KP_8", GLFW_KEY_KP_8)
+        .set_const("KEY_KP_9", GLFW_KEY_KP_9)
+
+        .set_const("KEY_KP_DECIMAL",  GLFW_KEY_KP_DECIMAL)
+        .set_const("KEY_KP_DIVIDE",   GLFW_KEY_KP_DIVIDE)
+        .set_const("KEY_KP_MULTIPLY", GLFW_KEY_KP_MULTIPLY)
+        .set_const("KEY_KP_SUBTRACT", GLFW_KEY_KP_SUBTRACT)
+        .set_const("KEY_KP_ADD",      GLFW_KEY_KP_ADD)
+        .set_const("KEY_KP_ENTER",    GLFW_KEY_KP_ENTER)
+        .set_const("KEY_KP_EQUAL",    GLFW_KEY_KP_EQUAL)
+
+        .set_const("KEY_LEFT_SHIFT",   GLFW_KEY_LEFT_SHIFT)
+        .set_const("KEY_LEFT_CONTROL", GLFW_KEY_LEFT_CONTROL)
+        .set_const("KEY_LEFT_ALT",     GLFW_KEY_LEFT_ALT)
+        .set_const("KEY_LEFT_SUPER",   GLFW_KEY_LEFT_SUPER)
+
+        .set_const("KEY_RIGHT_SHIFT",   GLFW_KEY_RIGHT_SHIFT)
+        .set_const("KEY_RIGHT_CONTROL", GLFW_KEY_RIGHT_CONTROL)
+        .set_const("KEY_RIGHT_ALT",     GLFW_KEY_RIGHT_ALT)
+        .set_const("KEY_RIGHT_SUPER",   GLFW_KEY_RIGHT_SUPER)
+
+        .set_const("KEY_MENU",          GLFW_KEY_MENU)
+        ;
+
     ctxt->Global()->Set(
             v8::String::NewFromUtf8(_isolate, "ZEngine"),
             m.new_instance());
 
+    Console::create(ctxt, _isolate);
+
     LoadMainScript("main.js", ctxt);
-
-    GlobalFunction _init_function = GetGlobalFunction("init");
-    GlobalFunction _update_function = GetGlobalFunction("update");
-    GlobalFunction _shutdown_function = GetGlobalFunction("shutdown");
-}
-
-ZNode::ZNode() : pos_(0,0) {
-    v8pp::class_<glm::vec2>::reference_external(Shell::_isolate, &pos_);
-}
-
-ZNode::~ZNode() {
-    // v8pp::class_<glm::vec2>::unreference_external(Shell::_isolate, &pos_);
-}
-
-ZSpriteNode::ZSpriteNode() {
-    // v8pp::class_<glm::vec4>::reference_external(Shell::_isolate, &color_);
-}
-
-ZSpriteNode::~ZSpriteNode() {
-    // v8pp::class_<glm::vec4>::unreference_external(Shell::_isolate, &color_);
-}
-
-ZSceneNode::ZSceneNode() : background_color_(0,0,0,0), temp("booga") {
-    v8pp::class_<glm::vec4>::reference_external(Shell::_isolate, &background_color_);
-}
-
-ZSceneNode::~ZSceneNode() {
-    v8pp::class_<glm::vec4>::unreference_external(Shell::_isolate, &background_color_);
 }
 
 ZSceneNode* Shell::Init() {
@@ -220,11 +357,6 @@ ZSceneNode* Shell::Init() {
     Handle<Value> result = func->Call(Context()->Global(), 0, args);
 
     ZSceneNode *scene = &v8pp::from_v8<ZSceneNode>(_isolate, result);
-    std::cout << "scene->get_background_color().x: " << scene->get_background_color().x << std::endl;
-    std::cout << "scene->get_background_color().y: " << scene->get_background_color().y << std::endl;
-    std::cout << "scene->get_background_color().z: " << scene->get_background_color().z << std::endl;
-    std::cout << "scene->get_background_color().w: " << scene->get_background_color().w << std::endl;
-
     return scene;
 }
 
@@ -275,6 +407,26 @@ bool Shell::Update(const float elapsedTime) {
     Handle<Value> result = func->Call(Context()->Global(), 1, args);
 
     return !result->IsBoolean() || result->BooleanValue();
+}
+
+void Shell::KeyDown(int key) {
+    v8::Context::Scope context_scope(Context());
+    HandleScope scope(_isolate);
+    GlobalFunction _key_down_function = GetGlobalFunction("key_was_pressed");
+    Local<Function> func = Local<Function>::New(_isolate, _key_down_function);
+    Handle<Value> args[1];
+    args[0] = Number::New(_isolate, key);
+    Handle<Value> result = func->Call(Context()->Global(), 1, args);
+}
+
+void Shell::KeyUp(int key) {
+    v8::Context::Scope context_scope(Context());
+    HandleScope scope(_isolate);
+    GlobalFunction _key_up_function = GetGlobalFunction("key_was_released");
+    Local<Function> func = Local<Function>::New(_isolate, _key_up_function);
+    Handle<Value> args[1];
+    args[0] = Number::New(_isolate, key);
+    Handle<Value> result = func->Call(Context()->Global(), 1, args);
 }
 
 void Shell::Print(const v8::FunctionCallbackInfo<v8::Value>& args) {
@@ -332,7 +484,7 @@ void Shell::Load(const v8::FunctionCallbackInfo<v8::Value>& args) {
                                             v8::NewStringType::kNormal).ToLocalChecked());
             return;
         }
-        if (!ExecuteString(args.GetIsolate(), source, args[i], false, false)) {
+        if (!ExecuteString(args.GetIsolate(), source, args[i], false, true)) {
             args.GetIsolate()->ThrowException(
                     v8::String::NewFromUtf8(args.GetIsolate(),
                                             "Error executing file",
@@ -556,6 +708,19 @@ void Shell::DebuggerThread() {
     clilen = sizeof(cli_addr);
 
     while (1) {
+        int rv;
+        while (rv == 0) {
+            if (terminateServer) return;
+
+            fd_set readfds;
+            struct timeval tv;
+            tv.tv_sec = 1;
+            FD_ZERO(&readfds);
+            FD_SET(sockfd, &readfds);
+
+            rv = select(sockfd+1, &readfds, NULL, NULL, &tv);
+        }
+
         client_socket = accept(sockfd, reinterpret_cast<sockaddr *>(&cli_addr), &clilen);
         assert(client_socket >= 0);
         _main_debug_client_socket = client_socket;

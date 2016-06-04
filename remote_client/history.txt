@@ -1,37 +1,3 @@
-n.backgroundColor.x
-n.backgroundColor = new Vector4(1.0,2.3,456,12)
-n.backgroundColor = new Vec4(1.0,2.3,456,12)
-n.backgroundColor = new ZEngine.Vec4(1.0,2.3,456,12)
-n.backgroundColor.x
-let v = new ZEngine.Vec4(1.0,2.0,3.0,4.0)
-v.x
-v.y
-v.z
-v.w
-v.r
-let n = new ZEngine.SceneNode()
-n.backgroundColor = v
-n.backgroundColor.x
-let a = new ZEngine.Node()
-a.position.x = 3
-a.position.x
-a.position = ZEngine.Vec2(5,6)
-a.position.x
-a.position = new ZEngine.Vec2(5,6)
-a.position.x
-a.position.y
-let a = new ZEngine.Node()
-a.position = new ZEngine.Vec2(5,6)
-a.position.x
-a.position.y
-let n = new ZEngine.SceneNode()
-n.backgroundColor = new ZEngine.vec4(1,2,3,4)
-n.backgroundColor = new ZEngine.Vec4(1,2,3,4)
-n.backgroundColor.x
-n.backgroundColor.y
-n.backgroundColor.z
-n.backgroundColor.w
-Object.keys(this)
 n.backgroundColor.x = 0
 n.backgroundColor.x
 n.backgroundColor.y
@@ -98,3 +64,36 @@ n.backgroundColor.y = .2
 n.backgroundColor.y = .3
 n.backgroundColor.y = .5
 n.backgroundColor.y = .6
+n.backgroundColor.x = 0
+n
+Object.keys(n)
+Object.keys(this)
+Object.keys(n)
+n
+n.position
+n.size
+n.backgroundColor
+n.size
+n.backgroundColor
+Object.keys(n)
+n.backgroundColor.x = 3
+n.backgroundColor.x = 0
+n.color.x = 0
+n.backgroundColor.x = 0
+n.backgroundColor.x = .5
+test_node
+test_node.position.x = 200
+Object.keys(this)
+Object.keys(ZEngine)
+this
+this.keys
+Object.keys(this)
+MOVEMENT_SPEED
+MOVEMENT_SPEED = 10
+MOVEMENT_SPEED = 100
+MOVEMENT_SPEED = 10
+paddle.color = ZEngine.Vec4(1.0, 0.0, 0.0, 1.0)
+paddle.color = ZEngine.Vec4(1.0, 1.0, 1.0, 1.0)
+paddle.size.x = 240
+paddle.size.x = 120
+console.log("hello, world!")

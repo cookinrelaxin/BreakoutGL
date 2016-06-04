@@ -2,9 +2,15 @@
 
 #include <iostream>
 
+#include <GL/glew.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 SpriteRenderer::SpriteRenderer(Shader &shader) {
+    assert(glGetError() == GL_NO_ERROR);
     this->shader = shader;
     this->initRenderData();
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 SpriteRenderer::~SpriteRenderer() {
@@ -16,6 +22,7 @@ void SpriteRenderer::DrawSprite(Texture2D &texture,
                                 glm::vec2 size,
                                 GLfloat rotate,
                                 glm::vec3 color) {
+    assert(glGetError() == GL_NO_ERROR);
     glm::mat4 model = [=]() {
         glm::mat4 m;
 
@@ -49,9 +56,11 @@ void SpriteRenderer::DrawSprite(Texture2D &texture,
 
     //reset vertex array
     glBindVertexArray(0);
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 void SpriteRenderer::initRenderData() {
+    assert(glGetError() == GL_NO_ERROR);
     GLuint VBO;
     GLfloat vertices[] = {
         // Pos      // Tex
@@ -77,4 +86,5 @@ void SpriteRenderer::initRenderData() {
     //reset buffer and vertex array
     glBindBuffer(GL_ARRAY_BUFFER, 0);
     glBindVertexArray(0);
+    assert(glGetError() == GL_NO_ERROR);
 }

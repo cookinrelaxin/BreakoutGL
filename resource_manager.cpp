@@ -33,9 +33,11 @@ Shader ResourceManager::GetShader(std::string name) {
 Texture2D ResourceManager::LoadTexture(const GLchar *file,
                                        GLboolean alpha,
                                        std::string name) {
+    assert(glGetError() == GL_NO_ERROR);
     Texture2D tex = loadTextureFromFile(file, alpha);
     Textures[name] = tex;
     return Textures[name];
+    assert(glGetError() == GL_NO_ERROR);
 }
 
 Texture2D ResourceManager::GetTexture(std::string name) {

@@ -1,2 +1,7 @@
 #vim swap files
 .*sw*
+
+#build artifacts
+*.o
+*.d
+
