@@ -4,16 +4,20 @@
 #include "v8pp/class.hpp"
 
 ZNode::ZNode() : pos_(0,0), size_(1024, 768), zpos_(0) {
-    v8pp::class_<glm::vec2>::reference_external(Shell::_isolate, &pos_);
-    v8pp::class_<glm::vec2>::reference_external(Shell::_isolate, &size_);
+    v8::Isolate* isolate = Shell::_context->isolate();
+    v8pp::class_<glm::vec2>::reference_external(isolate, &pos_);
+    v8pp::class_<glm::vec2>::reference_external(isolate, &size_);
+
     // v8pp::class_<int>::reference_external(Shell::_isolate, &zpos_);
     // v8pp::class_<std::string>::reference_external(Shell::_isolate, &name_);
     // v8pp::class_<ZNode*>::reference_external(Shell::_isolate, &parent_);
 }
 
 ZNode::~ZNode() {
-    v8pp::class_<glm::vec2>::unreference_external(Shell::_isolate, &pos_);
-    v8pp::class_<glm::vec2>::unreference_external(Shell::_isolate, &size_);
+    v8::Isolate* isolate = Shell::_context->isolate();
+    v8pp::class_<glm::vec2>::unreference_external(isolate, &pos_);
+    v8pp::class_<glm::vec2>::unreference_external(isolate, &size_);
+
     // v8pp::class_<int>::unreference_external(Shell::_isolate, &zpos_);
     // v8pp::class_<std::string>::unreference_external(Shell::_isolate, &name_);
     // v8pp::class_<ZNode*>::unreference_external(Shell::_isolate, &parent_);
@@ -71,4 +75,18 @@ void ZNode::set_name(std::string new_name) {
 
 void ZNode::draw(SpriteRenderer& renderer) {
     return;
+}
+
+v8pp::class_<ZNode> ZNode::create(v8::Isolate* isolate) {
+    v8pp::class_<ZNode> znode_class(isolate);
+    znode_class
+        .ctor<>()
+        .set("position", v8pp::property(&ZNode::get_position, &ZNode::set_position))
+        .set("zPosition", v8pp::property(&ZNode::get_zposition, &ZNode::set_zposition))
+        .set("size", v8pp::property(&ZNode::get_size, &ZNode::set_size))
+        .set("name", v8pp::property(&ZNode::get_name, &ZNode::set_name))
+        .set("addChild", &ZNode::add_child)
+        .set("getChild", &ZNode::add_child)
+        ;
+    return znode_class;
 }

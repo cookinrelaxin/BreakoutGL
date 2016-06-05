@@ -87,7 +87,7 @@ void configureWindow(GLFWwindow* window) {
     glfwSetKeyCallback(window,callback);
 }
 
-int main(int argc, char *argv[]) {
+int main() {
     int DEFAULT_WIDTH(800), DEFAULT_HEIGHT(600);
 
     GLFWwindow* window = create_window(DEFAULT_WIDTH, DEFAULT_HEIGHT, "booga");
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
     configureGL(DEFAULT_WIDTH, DEFAULT_HEIGHT);
     assert(glGetError() == GL_NO_ERROR);
 
-    Shell shell(argc, argv);
+    Shell shell;
     ZSceneNode* scene = shell.Init();
     int width = scene->get_size().x;
     int height = scene->get_size().y;

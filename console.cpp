@@ -13,11 +13,13 @@ void Console::log(v8::FunctionCallbackInfo<v8::Value> const& args) {
     std::cout << std::endl;
 }
 
-void Console::create(v8::Local<v8::Context> context, v8::Isolate* isolate) {
+void Console::create(v8pp::context* context) {
+    v8::Isolate* isolate = context->isolate();
     v8pp::module m(isolate);
     m.set("log", &log);
     
-    context->Global()->Set(
-            v8::String::NewFromUtf8(isolate, "console"),
-            m.new_instance());
+    // context->Global()->Set(
+    //         v8::String::NewFromUtf8(isolate, "console"),
+    //         m.new_instance());
+    context->set("console", m);
 }

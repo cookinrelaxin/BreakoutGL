@@ -9,11 +9,13 @@
 #include "v8pp/class.hpp"
 
 ZSpriteNode::ZSpriteNode() {
-    v8pp::class_<glm::vec4>::reference_external(Shell::_isolate, &color_);
+    v8::Isolate* isolate = Shell::_context->isolate();
+    v8pp::class_<glm::vec4>::reference_external(isolate, &color_);
 }
 
 ZSpriteNode::~ZSpriteNode() {
-    v8pp::class_<glm::vec4>::unreference_external(Shell::_isolate, &color_);
+    v8::Isolate* isolate = Shell::_context->isolate();
+    v8pp::class_<glm::vec4>::unreference_external(isolate, &color_);
 }
 
 glm::vec4& ZSpriteNode::get_color() {
@@ -51,3 +53,19 @@ void ZSpriteNode::draw(SpriteRenderer& renderer) {
                         0.0f,
                         glm::vec3(color_.x, color_.y, color_.z));
 }
+
+v8pp::class_<ZSpriteNode> ZSpriteNode::create(v8::Isolate* isolate) {
+    v8pp::class_<ZSpriteNode> zsprite_node_class(isolate);
+    zsprite_node_class
+        .ctor<>()
+        .inherit<ZNode>()
+        .set("color", v8pp::property(
+                        &ZSpriteNode::get_color,
+                        &ZSpriteNode::set_color))
+        .set("texture", v8pp::property(
+                            &ZSpriteNode::get_texture,
+                            &ZSpriteNode::set_texture))
+        ;
+    return zsprite_node_class;
+}
+

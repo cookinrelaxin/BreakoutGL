@@ -1,7 +1,4 @@
 n.backgroundColor.x = 0
-n.backgroundColor.x
-n.backgroundColor.y
-n.backgroundColor.x = 0
 n.backgroundColor.y
 n.backgroundColor.x
 n.backgroundColor.y
@@ -96,4 +93,8 @@ paddle.color = ZEngine.Vec4(1.0, 0.0, 0.0, 1.0)
 paddle.color = ZEngine.Vec4(1.0, 1.0, 1.0, 1.0)
 paddle.size.x = 240
 paddle.size.x = 120
+console.log("hello, world!")
+Object.keys(this)
+console
+console.log
 console.log("hello, world!")

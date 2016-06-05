@@ -2,8 +2,11 @@
 #define ZNODE_H
 
 #include <glm/glm.hpp>
+
 #include <set>
 #include <string>
+
+#include <v8pp/module.hpp>
 
 #include "sprite_renderer.h"
 
@@ -56,6 +59,9 @@ class ZNode {
 
         //RENDERING
         virtual void draw(SpriteRenderer& renderer);
+
+        //SCRIPTING
+        static v8pp::class_<ZNode> create(v8::Isolate* isolate);
 
     protected:
         glm::vec2 pos_;

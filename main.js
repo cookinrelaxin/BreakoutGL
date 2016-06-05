@@ -1,4 +1,3 @@
-// var levels = require("./levels");
 var n = new ZEngine.SceneNode();
 var paddle = new ZEngine.SpriteNode();
 
@@ -8,7 +7,6 @@ var MOVE_RIGHT = false;
 var MOVEMENT_SPEED = 20;
 function init() {
     n.backgroundColor = ZEngine.Vec4(0.25, 0.1, 0.5, 1.0);
-    // n.backgroundTexture = "./textures/background.jpg";
     n.size = ZEngine.Vec2(1024, 768);
     n.name = "MyGame";
 

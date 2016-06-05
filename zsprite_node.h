@@ -20,6 +20,9 @@ class ZSpriteNode : public ZNode {
 
         void draw(SpriteRenderer& renderer);
 
+        //Scripting
+        static v8pp::class_<ZSpriteNode> create(v8::Isolate* isolate);
+
     protected:
         glm::vec4 color_;
         std::string texture_name_;
