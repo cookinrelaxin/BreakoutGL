@@ -20,6 +20,7 @@
 #include "sprite_renderer.h"
 #include "shader.h"
 #include "texture.h"
+#include "post_processor.h"
 
 #include <thread>
 #include <chrono>
@@ -63,6 +64,8 @@ void configureGL(int width, int height) {
     glViewport(0, 0, width, height);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);
+    // glEnable(GL_POLYGON_SMOOTH);
+    // glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
@@ -113,6 +116,10 @@ int main() {
                                "./shaders/sprite.fs",
                                nullptr,
                                "sprite_shader");
+    ResourceManager::LoadShader("./shaders/post_process.vs",
+                               "./shaders/post_process.fs",
+                               nullptr,
+                               "postprocessing_shader");
     glm::mat4 projection = glm::ortho(0.0f,
                                       static_cast<GLfloat>(width),
                                       static_cast<GLfloat>(height),
@@ -123,6 +130,10 @@ int main() {
     ResourceManager::GetShader("sprite_shader").SetMatrix4("projection", projection);
     Shader sprite_shader = ResourceManager::GetShader("sprite_shader");
     SpriteRenderer renderer(sprite_shader);
+    PostProcessor  postProcessor(
+            ResourceManager::GetShader("postprocessing_shader"),
+            width,
+            height);
     assert(glGetError() == GL_NO_ERROR);
 
     GLfloat currentFrame = glfwGetTime();
@@ -143,12 +154,13 @@ int main() {
         glClearColor(clear.x, clear.y, clear.z, clear.w);
         glClear(GL_COLOR_BUFFER_BIT);
 
+        postProcessor.BeginRender();
         for (ZNode* node : scene->get_children()) {
             node->draw(renderer);
         }
-
+        postProcessor.EndRender();
+        postProcessor.Render(currentFrame);
         glfwSwapBuffers(window);
-        // std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     shell.UninitializeV8();
     cleanup();

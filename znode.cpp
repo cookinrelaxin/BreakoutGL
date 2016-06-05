@@ -1,7 +1,10 @@
 #include "znode.h"
 #include "shell.h"
+#include "collisions.h"
 
 #include "v8pp/class.hpp"
+
+#include <iostream>
 
 ZNode::ZNode() : pos_(0,0), size_(1024, 768), zpos_(0) {
     v8::Isolate* isolate = Shell::_context->isolate();
@@ -51,6 +54,11 @@ void ZNode::add_child(ZNode* child) {
     // children_.insert(child->get_name(), child);
     children_.insert(child);
 };
+
+void ZNode::remove_child(ZNode* child) {
+    // children_.insert(child->get_name(), child);
+    children_.erase(child);
+};
 // 
 // ZNode* ZNode::get_child(std::string child_name) {
 //     return children_.find(child_name);
@@ -59,7 +67,7 @@ void ZNode::add_child(ZNode* child) {
 // void removeChild(ZNode* child) {
 //     children_.
 // };
-std::set<ZNode*, ZNode::NodeComparator> ZNode::get_children() {
+std::multiset<ZNode*, ZNode::NodeComparator> ZNode::get_children() {
     return children_;
 };
 ZNode* ZNode::get_parent() {
@@ -77,6 +85,43 @@ void ZNode::draw(SpriteRenderer& renderer) {
     return;
 }
 
+void ZNode::doesCollideAABBAABB(v8::FunctionCallbackInfo<v8::Value> const& args) {
+    v8::HandleScope handle_scope(args.GetIsolate());
+    // ZNode& other = args[0];
+    ZNode *other = &v8pp::from_v8<ZNode>(args.GetIsolate(), args[0]);
+    if (Collisions::CheckCollisionAABBAABB(this, other))
+        args.GetReturnValue().Set(v8::Boolean::New(args.GetIsolate(), true));
+    else    
+        args.GetReturnValue().Set(v8::Boolean::New(args.GetIsolate(), false));
+}
+
+void ZNode::getCollision(v8::FunctionCallbackInfo<v8::Value> const& args) {
+    v8::HandleScope handle_scope(args.GetIsolate());
+    ZNode *other = &v8pp::from_v8<ZNode>(args.GetIsolate(), args[0]);
+    Collision collision = Collisions::CheckCollision(this, other);
+
+    std::string directionString = [](Direction d) {
+        switch (d) {
+            case Direction::UP :
+                return "UP";
+            case Direction::RIGHT :
+                return "RIGHT";
+            case Direction::DOWN :
+                return "DOWN";
+            case Direction::LEFT :
+                return "LEFT";
+        }
+    }(std::get<1>(collision));
+
+    v8::Handle<v8::Object> jsCollision = v8pp::class_<ZCollision>::create_object(
+            args.GetIsolate(),
+            std::get<0>(collision),
+            directionString,
+            std::get<2>(collision));
+
+    args.GetReturnValue().Set(jsCollision);
+}
+
 v8pp::class_<ZNode> ZNode::create(v8::Isolate* isolate) {
     v8pp::class_<ZNode> znode_class(isolate);
     znode_class
@@ -86,7 +131,10 @@ v8pp::class_<ZNode> ZNode::create(v8::Isolate* isolate) {
         .set("size", v8pp::property(&ZNode::get_size, &ZNode::set_size))
         .set("name", v8pp::property(&ZNode::get_name, &ZNode::set_name))
         .set("addChild", &ZNode::add_child)
-        .set("getChild", &ZNode::add_child)
+        .set("removeChild", &ZNode::remove_child)
+        // .set("getChild", &ZNode::get_child)
+        .set("collides", &ZNode::doesCollideAABBAABB)
+        .set("getCollision", &ZNode::getCollision)
         ;
     return znode_class;
 }

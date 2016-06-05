@@ -7,6 +7,7 @@
 
 class Vec2 {
     public:
+        void normalize(v8::FunctionCallbackInfo<v8::Value> const& args);
         static v8pp::class_<glm::vec2> create(v8::Isolate* isolate);
 };
 

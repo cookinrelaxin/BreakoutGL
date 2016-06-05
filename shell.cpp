@@ -28,7 +28,6 @@ void Shell::LoadMainScript(const std::string& file_name) {
 }
 
 Shell::Shell() {
-    std::cout << "ONE" << std::endl;
     v8::V8::InitializeICU();
     v8::Platform* platform = v8::platform::CreateDefaultPlatform();
     v8::V8::InitializePlatform(platform);
@@ -39,7 +38,6 @@ Shell::Shell() {
     CreateShellContext();
 
     _debugger_thread = std::thread(&ReplServer::Start);
-    std::cout << "TWO" << std::endl;
 }
 
 Shell::~Shell() {
@@ -91,7 +89,13 @@ void Shell::Poll() {
 bool Shell::Update(const float elapsedTime) {
     v8::Isolate* isolate = _context->isolate();
     v8::HandleScope scope(isolate);
-    bool result = _context->run_script("update()")->BooleanValue();
+    std::stringstream jsExpression; 
+    jsExpression 
+        << "update("
+        << elapsedTime
+        << ");"
+        ;
+    bool result = _context->run_script(jsExpression.str())->BooleanValue();
     // _context->run_script("update()");
     return result;
 }

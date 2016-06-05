@@ -42,8 +42,8 @@ class ZNode {
 
         //NODE HIERARCHY
         void                add_child(ZNode* child);
-        // void                removeChild(ZNode* child);
-        std::set<ZNode*, NodeComparator> get_children();
+        void                remove_child(ZNode* child);
+        std::multiset<ZNode*, NodeComparator> get_children();
         ZNode*              get_parent();
 
         //NAME
@@ -56,6 +56,8 @@ class ZNode {
 
         //COLLISIONS
         // bool containsPoint(glm::vec2 point);
+        void doesCollideAABBAABB(v8::FunctionCallbackInfo<v8::Value> const& args);
+        void getCollision(v8::FunctionCallbackInfo<v8::Value> const& args);
 
         //RENDERING
         virtual void draw(SpriteRenderer& renderer);
@@ -69,11 +71,10 @@ class ZNode {
         // glm::vec2 frame_;
         glm::vec2 size_;
 
-        std::set<ZNode*, NodeComparator> children_;
+        std::multiset<ZNode*, NodeComparator> children_;
         ZNode* parent_;
 
         std::string name_;
 };
-
 
 #endif

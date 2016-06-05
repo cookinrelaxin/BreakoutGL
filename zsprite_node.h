@@ -7,6 +7,7 @@
 
 #include "znode.h"
 
+
 class ZSpriteNode : public ZNode {
     public:
         ZSpriteNode();

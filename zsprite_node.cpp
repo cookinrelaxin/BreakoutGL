@@ -11,6 +11,8 @@
 ZSpriteNode::ZSpriteNode() {
     v8::Isolate* isolate = Shell::_context->isolate();
     v8pp::class_<glm::vec4>::reference_external(isolate, &color_);
+
+    set_texture("./textures/white_background.png");
 }
 
 ZSpriteNode::~ZSpriteNode() {
@@ -33,12 +35,13 @@ void ZSpriteNode::set_texture(std::string texture_path) {
     assert(glGetError() == GL_NO_ERROR);
     std::string extension = texture_path.substr(texture_path.find_last_of(".") + 1);
     auto use_alpha = [extension]() {
-        if (extension == "png")
+        if (extension == "png" or extension == "tga")
             return GL_TRUE;
         return GL_FALSE;
     };
     ResourceManager::LoadTexture(texture_path.c_str(),
                                  use_alpha(),
+                                 // GL_FALSE,
                                  texture_path);
     texture_name_ = texture_path;
     assert(glGetError() == GL_NO_ERROR);

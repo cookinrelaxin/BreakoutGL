@@ -5,6 +5,8 @@
 #include "znode.h"
 #include "zsprite_node.h"
 #include "zscene_node.h"
+#include "collisions.h"
+#include "require.h"
 
 #include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
@@ -22,6 +24,9 @@ void ZEngine::create(v8pp::context* context) {
     v8pp::class_<ZSpriteNode> zsprite_node_class = ZSpriteNode::create(isolate);
     v8pp::class_<ZSceneNode> zscene_node_class = ZSceneNode::create(isolate);
 
+    v8pp::class_<ZCollision> zcollision_class = ZCollision::create(isolate);
+
+    Require::create(context);
 
     v8pp::module m(isolate);
     m
@@ -31,6 +36,7 @@ void ZEngine::create(v8pp::context* context) {
         .set("Node", znode_class)
         .set("SpriteNode", zsprite_node_class)
         .set("SceneNode", zscene_node_class)
+        .set("Collision", zcollision_class)
         ;
 
     //KEY VALUES

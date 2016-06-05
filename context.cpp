@@ -177,7 +177,7 @@ context::context(v8::Isolate* isolate)
 	v8::Handle<v8::Value> data = detail::set_external_data(isolate_, this);
 	v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate_);
 
-	global->Set(isolate_, "require", v8::FunctionTemplate::New(isolate_, context::load_module, data));
+	// global->Set(isolate_, "require", v8::FunctionTemplate::New(isolate_, context::load_module, data));
 	global->Set(isolate_, "run", v8::FunctionTemplate::New(isolate_, context::run_file, data));
 
 	v8::Handle<v8::Context> impl = v8::Context::New(isolate_, nullptr, global);
