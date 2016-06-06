@@ -10,21 +10,16 @@ ZNode::ZNode() : pos_(0,0), size_(1024, 768), zpos_(0) {
     v8::Isolate* isolate = Shell::_context->isolate();
     v8pp::class_<glm::vec2>::reference_external(isolate, &pos_);
     v8pp::class_<glm::vec2>::reference_external(isolate, &size_);
-
-    // v8pp::class_<int>::reference_external(Shell::_isolate, &zpos_);
-    // v8pp::class_<std::string>::reference_external(Shell::_isolate, &name_);
-    // v8pp::class_<ZNode*>::reference_external(Shell::_isolate, &parent_);
 }
 
 ZNode::~ZNode() {
-    v8::Isolate* isolate = Shell::_context->isolate();
-    v8pp::class_<glm::vec2>::unreference_external(isolate, &pos_);
-    v8pp::class_<glm::vec2>::unreference_external(isolate, &size_);
-
-    // v8pp::class_<int>::unreference_external(Shell::_isolate, &zpos_);
-    // v8pp::class_<std::string>::unreference_external(Shell::_isolate, &name_);
-    // v8pp::class_<ZNode*>::unreference_external(Shell::_isolate, &parent_);
+    // v8::Isolate* isolate = Shell::_context->isolate();
+    // v8pp::class_<glm::vec2>::unreference_external(isolate, &pos_);
+    // v8pp::class_<glm::vec2>::unreference_external(isolate, &size_);
 }
+
+// ZNode* ZNode::get_parent() {
+// }
 
 glm::vec2& ZNode::get_position() {
     return pos_;
@@ -52,12 +47,12 @@ void ZNode::set_size(glm::vec2 new_size) {
 
 void ZNode::add_child(ZNode* child) {
     // children_.insert(child->get_name(), child);
-    children_.insert(child);
+    children_.insert(*child);
 };
 
 void ZNode::remove_child(ZNode* child) {
     // children_.insert(child->get_name(), child);
-    children_.erase(child);
+    children_.erase(*child);
 };
 // 
 // ZNode* ZNode::get_child(std::string child_name) {
@@ -67,7 +62,7 @@ void ZNode::remove_child(ZNode* child) {
 // void removeChild(ZNode* child) {
 //     children_.
 // };
-std::multiset<ZNode*, ZNode::NodeComparator> ZNode::get_children() {
+std::multiset<ZNode, ZNode::NodeComparator>const & ZNode::get_children() {
     return children_;
 };
 ZNode* ZNode::get_parent() {
@@ -81,7 +76,7 @@ void ZNode::set_name(std::string new_name) {
     name_ = new_name;
 };
 
-void ZNode::draw(SpriteRenderer& renderer) {
+void ZNode::draw(SpriteRenderer& renderer) const {
     return;
 }
 

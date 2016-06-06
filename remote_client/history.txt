@@ -1,35 +1,3 @@
-paddle.size.x = 120
-console.log("hello, world!")
-Object.keys(this)
-console
-console.log
-console.log("hello, world!")
-Object.keys(this)
-make
-Object.keys(this)
-levels
-levels.booga
-ball
-Object.keys(ball)
-ball.addChild
-ball.doesCollideAABBAABB
-ball.collides
-ZEngine.Collision
-ZEngine.Collision.exists
-var c = new ZEngine.Collision
-var c = new ZEngine.Collision(true, "UP", ZEngine.Vec2(-1, 3))
-c
-c.exists
-c.direction
-c.difference
-var c = new ZEngine.Collision(true, "UP", ZEngine.Vec2(-1, 3))
-c.difference
-Object.keys(c)
-c.direction
-c.difference
-var c = new ZEngine.Collision(true, "UP", ZEngine.Vec2(-1, 3))
-c.difference
-var c = new ZEngine.Collision(true, "UP", ZEngine.Vec2(-1, 3))
 var c = new ZEngine.Collision(true, "UP", new ZEngine.Vec2(-1, 3))
 c.difference
 c.direction
@@ -98,3 +66,35 @@ let v = ZEngine.Vec2(4.2, 24.3)
 v.normalize
 let v = ZEngine.Vec2(4.2, 24.3)
 for (i in v) console.log(v)
+ball
+ball.position
+ball.size
+ball.velocity
+ball.size
+ball.position
+ball.velocity
+ball
+ball.size
+ball.color
+n.backgroundColor
+n.name
+n.size
+paddle.zPosition
+paddle.size
+n.size
+ball.size
+n.size
+n
+n.size
+n.backgroundColor
+n.size
+n.size.x
+n.backgroundColor
+n.size
+n.backgroundColor
+n.size
+n.backgroundColor
+n.position
+n.size
+n.position
+n.zPosition

@@ -159,10 +159,10 @@ ZCollision::ZCollision(bool exists, std::string direction, glm::vec2 difference)
 }
 
 ZCollision::~ZCollision() {
-    v8::Isolate* isolate = Shell::_context->isolate();
+    // v8::Isolate* isolate = Shell::_context->isolate();
     // v8pp::class_<bool>::unreference_external(isolate, &exists_);
     // v8pp::class_<std::string>::unreference_external(isolate, &direction_);
-    v8pp::class_<glm::vec2>::unreference_external(isolate, &difference_);
+    // v8pp::class_<glm::vec2>::unreference_external(isolate, &difference_);
 }
 
 bool ZCollision::get_exists() {

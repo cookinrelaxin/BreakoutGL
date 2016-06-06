@@ -155,8 +155,10 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT);
 
         postProcessor.BeginRender();
-        for (ZNode* node : scene->get_children()) {
-            node->draw(renderer);
+        // std::cout << "scene->get_size().x: " << scene->get_size().x << std::endl;
+        for (const ZNode& node : scene->get_children()) {
+            // std::cout << "draw node: " << &node << std::endl;
+            node.draw(renderer);
         }
         postProcessor.EndRender();
         postProcessor.Render(currentFrame);

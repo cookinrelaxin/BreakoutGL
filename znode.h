@@ -7,14 +7,15 @@
 #include <string>
 
 #include <v8pp/module.hpp>
+#include "v8pp/class.hpp"
 
 #include "sprite_renderer.h"
 
 class ZNode {
     public:
         struct NodeComparator {
-            bool operator()(ZNode* a, ZNode* b) const {
-                return a->get_zposition() < b->get_zposition();
+            bool operator()(ZNode a, ZNode b) const {
+                return a.get_zposition() < b.get_zposition();
             }
         };
 
@@ -43,7 +44,7 @@ class ZNode {
         //NODE HIERARCHY
         void                add_child(ZNode* child);
         void                remove_child(ZNode* child);
-        std::multiset<ZNode*, NodeComparator> get_children();
+        std::multiset<ZNode, NodeComparator>const & get_children();
         ZNode*              get_parent();
 
         //NAME
@@ -60,18 +61,19 @@ class ZNode {
         void getCollision(v8::FunctionCallbackInfo<v8::Value> const& args);
 
         //RENDERING
-        virtual void draw(SpriteRenderer& renderer);
+        virtual void draw(SpriteRenderer& renderer) const;
 
         //SCRIPTING
         static v8pp::class_<ZNode> create(v8::Isolate* isolate);
 
     protected:
+        // glm::vec2* pos_;
         glm::vec2 pos_;
         int zpos_;
         // glm::vec2 frame_;
         glm::vec2 size_;
 
-        std::multiset<ZNode*, NodeComparator> children_;
+        std::multiset<ZNode, NodeComparator> children_;
         ZNode* parent_;
 
         std::string name_;

@@ -9,6 +9,8 @@
 #include "v8pp/class.hpp"
 
 ZSpriteNode::ZSpriteNode() {
+    color_ = glm::vec4(1.0, 1.0, 1.0, 1.0);
+
     v8::Isolate* isolate = Shell::_context->isolate();
     v8pp::class_<glm::vec4>::reference_external(isolate, &color_);
 
@@ -16,8 +18,9 @@ ZSpriteNode::ZSpriteNode() {
 }
 
 ZSpriteNode::~ZSpriteNode() {
-    v8::Isolate* isolate = Shell::_context->isolate();
-    v8pp::class_<glm::vec4>::unreference_external(isolate, &color_);
+    std::cout << "DELETE SPRITENODE" << std::endl;
+    //now you have to remove THIS from parent 
+
 }
 
 glm::vec4& ZSpriteNode::get_color() {
@@ -47,9 +50,12 @@ void ZSpriteNode::set_texture(std::string texture_path) {
     assert(glGetError() == GL_NO_ERROR);
 };
 
-void ZSpriteNode::draw(SpriteRenderer& renderer) {
+void ZSpriteNode::draw(SpriteRenderer& renderer) const {
     Texture2D tex = ResourceManager::GetTexture(texture_name_);
     assert(tex.ID != 0);
+    // assert(*pos_ != nullptr);
+    // assert(*size_ != nullptr);
+    // assert(*color_ != nullptr);
     renderer.DrawSprite(tex,
                         pos_,
                         size_,

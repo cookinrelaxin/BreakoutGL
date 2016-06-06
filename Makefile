@@ -10,15 +10,15 @@ LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL
 
 EXEC = zengine
 
-SOURCES = $(wildcard *.cpp) #./include/v8pp/context.cpp
+SOURCES = $(wildcard *.cpp)
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
 $(EXEC): $(OBJECTS)
-	$(CC) $(OBJECTS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(LINKER_FLAGS) -o $(EXEC)
+	$(CC) -g $(OBJECTS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(LINKER_FLAGS) -o $(EXEC)
 
 %.o: %.cpp
-	$(CC) -c $(CC_FLAGS) $(INCLUDE_PATHS) $< -o $@
+	$(CC) -c -g $(CC_FLAGS) $(INCLUDE_PATHS) $< -o $@
 
 clean:
 	rm -f $(EXEC) $(OBJECTS)

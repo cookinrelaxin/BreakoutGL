@@ -33,7 +33,6 @@ Shell::Shell() {
     v8::V8::InitializePlatform(platform);
     v8::V8::Initialize();
     _context = new v8pp::context;
-    // _context->set_lib_path("");
     v8::HandleScope scope(_context->isolate());
     CreateShellContext();
 

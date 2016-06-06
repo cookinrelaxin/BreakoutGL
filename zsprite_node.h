@@ -7,7 +7,6 @@
 
 #include "znode.h"
 
-
 class ZSpriteNode : public ZNode {
     public:
         ZSpriteNode();
@@ -19,7 +18,7 @@ class ZSpriteNode : public ZNode {
         std::string get_texture();
         void        set_texture(std::string texture_path);
 
-        void draw(SpriteRenderer& renderer);
+        void draw(SpriteRenderer& renderer) const;
 
         //Scripting
         static v8pp::class_<ZSpriteNode> create(v8::Isolate* isolate);

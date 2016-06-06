@@ -9,8 +9,8 @@ ZSceneNode::ZSceneNode() : background_color_(0,0,0,0) {
 }
 
 ZSceneNode::~ZSceneNode() {
-    v8::Isolate* isolate = Shell::_context->isolate();
-    v8pp::class_<glm::vec4>::unreference_external(isolate, &background_color_);
+    // v8::Isolate* isolate = Shell::_context->isolate();
+    // v8pp::class_<glm::vec4>::unreference_external(isolate, &background_color_);
 }
 
 glm::vec4& ZSceneNode::get_background_color() {

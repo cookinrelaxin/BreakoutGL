@@ -97,7 +97,8 @@ public:
 	void remove_object(v8::Isolate* isolate, T* object, void (*destroy)(v8::Isolate* isolate, T* obj) = nullptr)
 	{
 		auto it = objects_.find(object);
-		assert(objects_.find(object) != objects_.end() && "no object");
+		// assert(objects_.find(object) != objects_.end() && "no object");
+		if (!(objects_.find(object) != objects_.end())) throw std::runtime_error("couldnt find object");
 		if (it != objects_.end())
 		{
 			if (!it->second.IsNearDeath())
