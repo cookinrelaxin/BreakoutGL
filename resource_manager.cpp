@@ -22,7 +22,6 @@ Shader ResourceManager::LoadShader(const GLchar *vShaderFile,
                                    const GLchar *fShaderFile,
                                    const GLchar *gShaderFile,
                                    std::string name) {
-    if (Shaders.count(name) > 0) return Shaders[name];
     Shaders[name] = loadShaderFromFile(vShaderFile, fShaderFile, gShaderFile);
     return Shaders[name];
 }
@@ -34,11 +33,8 @@ Shader ResourceManager::GetShader(std::string name) {
 Texture2D ResourceManager::LoadTexture(const GLchar *file,
                                        GLboolean alpha,
                                        std::string name) {
-    if (Textures.count(name) > 0) return Textures[name];
-    assert(glGetError() == GL_NO_ERROR);
     Texture2D tex = loadTextureFromFile(file, alpha);
     Textures[name] = tex;
-    assert(glGetError() == GL_NO_ERROR);
     return Textures[name];
 }
 
@@ -108,7 +104,7 @@ Texture2D ResourceManager::loadTextureFromFile(const GLchar *file,
                               GLboolean alpha) {
     Texture2D texture;
     if (alpha) {
-        texture.Internal_Format = GL_RGBA8;
+        texture.Internal_Format = GL_RGBA;
         texture.Image_Format = GL_RGBA;
     }
     int width, height, channels;
