@@ -11,7 +11,6 @@
 //STL
 #include <iostream>
 
-//
 #include "events.h"
 
 enum ExitStatus {
