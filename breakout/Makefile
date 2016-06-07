@@ -1,0 +1,25 @@
+CC = clang++
+
+CC_FLAGS = -w -std=c++14 -ferror-limit=1
+
+INCLUDE_PATHS = -I../zengine/
+
+LIBRARY_PATHS = -L/usr/local/lib -L../zengine/lib
+
+LINKER_FLAGS = -lzengine
+
+EXEC = breakout.bin
+
+#SOURCES = $(wildcard *.cpp)
+SOURCES = ./src/main.cpp ./src/breakout.cpp
+
+OBJECTS = $(SOURCES:.cpp=.o)
+
+$(EXEC): $(OBJECTS)
+	$(CC) $(OBJECTS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(LINKER_FLAGS) -o $(EXEC)
+
+%.o: %.cpp
+	$(CC) -c $(CC_FLAGS) $(INCLUDE_PATHS) $< -o $@
+
+clean:
+	rm -f $(EXEC) $(OBJECTS)
