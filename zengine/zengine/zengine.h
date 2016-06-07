@@ -51,38 +51,6 @@ class Engine {
     EDIT: THERE ARE NO SEPARATE INPUT EVENT CALLBACKS. EVERYTHING PASSES THROUGH THE UPDATE FUNCTION.
          * /
 
-        /*      |~~~~~~~~~~~~~~~~~~~~~~~~~|
-         *      |  Mouse event callbacks  |
-         *      |~~~~~~~~~~~~~~~~~~~~~~~~~|
-         */
-
-        /*
-         *
-         */
-        static void registerMouseDownCallback(
-                std::function<void(MouseDownEvent)> callback);
-        /*
-         *
-         */
-        static void registerMouseUpCallback(
-                std::function<void(MouseUpEvent)> callback);
-        /*
-         *
-         */
-        static void registerMouseMoveCallback(
-                std::function<void(MouseMoveEvent)> callback);
-
-        /*      |~~~~~~~~~~~~~~~~~~~~~~~~~~~|
-         *      |  Keyboard event callbacks |
-         *      |~~~~~~~~~~~~~~~~~~~~~~~~~~~|
-         */
-
-        static void registerKeyDownCallback(std::function<void(KeyDownEvent)> callback);
-        /*
-         *
-         */
-        static void registerKeyUp(std::function<void(KeyUpEvent)> callback);
-
         // Initialize game engine
         /*
          *
