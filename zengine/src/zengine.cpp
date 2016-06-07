@@ -70,10 +70,10 @@ void Engine::init() {
         throw NoCallbackError("keyDownCallback");
     if (!keyUpCallback)
         throw NoCallbackError("keyUpCallback");
-    if (sWidth == 0)
-        throw std::logic_error("Client did not set screen width");
-    if (sHeight == 0)
-        throw std::logic_error("Client did not set screen height");
+    // if (sWidth == 0)
+    //     throw std::logic_error("Client did not set screen width");
+    // if (sHeight == 0)
+    //     throw std::logic_error("Client did not set screen height");
 
 
     std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
