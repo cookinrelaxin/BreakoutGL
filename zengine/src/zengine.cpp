@@ -1,4 +1,3 @@
-
 // #include "resource_manager.h"
 
 //STL
@@ -71,14 +70,31 @@ void Engine::init() {
         throw NoCallbackError("keyDownCallback");
     if (!keyUpCallback)
         throw NoCallbackError("keyUpCallback");
+    if (sWidth == 0)
+        throw std::logic_error("Client did not set screen width");
+    if (sHeight == 0)
+        throw std::logic_error("Client did not set screen height");
+
 
     std::cout << "Starting GLFW context, OpenGL 3.3" << std::endl;
     GLFWwindow* window = createWindow();
-    // configureWindow(window);
+    configureWindow(window);
 
     configureGLEW();
     configureGL();
 
+    initCallback();
+
+    float currentFrame, lastFrame;
+    currentFrame = lastFrame = glfwGetTime();
+    float deltaTime = currentFrame - lastFrame;
+    while (updateCallback(deltaTime)) {
+        deltaTime = currentFrame - lastFrame;
+    };
+    shutdownCallback();
+    cleanup();
+
+    return;
 }
 
 GLFWwindow* Engine::createWindow() {
@@ -93,6 +109,7 @@ GLFWwindow* Engine::createWindow() {
 
     // Create a GLFWwindow object that we can use for GLFW's functions
     GLFWwindow* window = glfwCreateWindow(sWidth, sHeight, "Breakout", nullptr, nullptr);
+    configureWindow(window);
     if (window == nullptr) {
         std::cout << "Failed to create GLFW window" << std::endl;
         glfwTerminate();
@@ -120,14 +137,14 @@ void Engine::configureGL() {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 }
 
-// void configureWindow(GLFWwindow* window) {
-//     glfwMakeContextCurrent(window);
-//     glfwSetKeyCallback(window,
-//             [](GLFWwindow* window, int key, int scancode, int action, int mode) {
-//                 handle_keys(Breakout, window, key, scancode, action, mode);
-//             }
-//     );
-// }
+void Engine::configureWindow(GLFWwindow* window) {
+    glfwMakeContextCurrent(window);
+    // glfwSetKeyCallback(window,
+    //         [](GLFWwindow* window, int key, int scancode, int action, int mode) {
+    //             handle_keys(Breakout, window, key, scancode, action, mode);
+    //         }
+    // );
+}
 
 // 
 // int main(int argc, char *argv[]) {

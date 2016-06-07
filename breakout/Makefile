@@ -6,7 +6,7 @@ INCLUDE_PATHS = -I../zengine/
 
 LIBRARY_PATHS = -L/usr/local/lib -L../zengine/lib
 
-LINKER_FLAGS = -lzengine
+LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL -lirrKlang -lfreetype -lzengine
 
 EXEC = breakout.bin
 

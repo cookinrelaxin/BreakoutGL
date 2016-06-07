@@ -57,6 +57,7 @@ class Engine {
     private:
         static void configureGLEW();
         static void configureGL();
+        static void configureWindow(GLFWwindow* window);
         static GLFWwindow* createWindow();
         static void cleanup();
 
