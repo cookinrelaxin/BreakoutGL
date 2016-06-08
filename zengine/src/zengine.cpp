@@ -9,7 +9,7 @@
 
 namespace Z {
 
-std::function<void(void)>  Engine::initCallback;
+std::function<SceneNode*(void)>  Engine::initCallback;
 std::function<bool(float)> Engine::updateCallback;
 std::function<void(void)>  Engine::shutdownCallback;
 std::function<void(MouseDownEvent)>  Engine::mouseDownCallback;
@@ -21,7 +21,7 @@ std::function<void(KeyUpEvent)>  Engine::keyUpCallback;
 unsigned int Engine::sWidth;
 unsigned int Engine::sHeight;
 
-void Engine::registerInitCallback(std::function<void(void)> callback) {
+void Engine::registerInitCallback(std::function<SceneNode*(void)> callback) {
     initCallback = callback;
 }
 
