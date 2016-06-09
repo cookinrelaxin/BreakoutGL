@@ -14,7 +14,6 @@ class vec2 {
         float r, s;
 
     private:
-        // glm::vec2 velocity_;
 };
 
 };
