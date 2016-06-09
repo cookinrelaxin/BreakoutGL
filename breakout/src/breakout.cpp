@@ -1,12 +1,13 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include "zengine/zengine.h"
 #include "zengine/velocity_2.h"
 
 #include "json.hpp"
-// #include <glm/glm.hpp>
+#include <glm/glm.hpp>
 
 #include "breakout.h"
 
@@ -27,9 +28,9 @@ struct Level {
 
 Z::SceneNode* Breakout::scene;
 std::vector<std::shared_ptr<Level>> Breakout::levels;
-std::vector<Z::SpriteNode*> Breakout::blocks;
+std::vector<Block*> Breakout::blocks;
 std::shared_ptr<Z::SpriteNode> Breakout::paddle;
-std::shared_ptr<Z::SpriteNode> Breakout::ball;
+std::shared_ptr<Ball> Breakout::ball;
 std::shared_ptr<Z::SpriteNode> Breakout::background;
 std::shared_ptr<Level> Breakout::currentLevel;
 
@@ -131,7 +132,15 @@ void Breakout::loadLevel(int levelNumber, Z::SceneNode* scene) {
     for (auto row : level->blockList) {
         x = 0;
         for (auto col : row) {
-             Z::SpriteNode* block = new Z::SpriteNode;
+             Block* block = new Block;
+             block->destroyed = false;
+             block->solid = false;
+
+             block->name = std::string("block:");
+             block->name += x;
+             block->name += ",";
+             block->name += y;
+
              block->setTexture(level->blockTextures[col]);
              block->zPosition = 1;
              block->color = level->blockColors[col];
@@ -145,10 +154,12 @@ void Breakout::loadLevel(int levelNumber, Z::SceneNode* scene) {
         y += blockHeight;
     }
 
-    ball = std::make_shared<Z::SpriteNode>();
+    ball = std::make_shared<Ball>();
     ball->zPosition = 2;
     ball->color = level->ballColor;
-    ball->size = Z::size2(level->ballRadius, level->ballRadius);
+    ball->passThrough = false;
+    ball->radius = level->ballRadius;
+    ball->size = Z::size2(ball->radius * 2, ball->radius * 2);
     ball->position = Z::pos2(paddle->position.x + paddle->size.width / 2 - ball->size.width / 2,
                              paddle->position.y - ball->size.height);
     ball->setTexture(level->ballTexture);
@@ -219,8 +230,9 @@ bool Breakout::update(float dt) {
     if (!STUCK) {
         ball->position.x += ball->velocity.dx;
         ball->position.y += ball->velocity.dy;
-        ball->velocity.dy += .1f;
     }
+
+    doCollisions();
 
     if (ball->position.x + ball->size.width >= scene->size.width) {
         ball->velocity.dx = -ball->velocity.dx;
@@ -233,6 +245,15 @@ bool Breakout::update(float dt) {
     if (ball->position.y <= 0) {
         ball->velocity.dy = -ball->velocity.dy;
     }
+
+    if (ball->position.y >= scene->size.height) {
+       ball->position = Z::pos2(
+               paddle->position.x + paddle->size.width / 2 - ball->size.width / 2,
+               paddle->position.y - ball->size.height);
+       STUCK = true;
+    }
+
+
     return true;
 }
 
@@ -291,89 +312,100 @@ void Breakout::keyUp(Z::KeyUpEvent event) {
 }
 
 void Breakout::doCollisions() {
-    // for (SpriteNode *brick : blocks) {
-    //     if (!box.Destroyed) {
-    //         Collision collision = CheckCollision(*Ball, box);
-    //         if (std::get<0>(collision)) {
-    //             if (!box.IsSolid) {
-    //                 box.Destroyed = GL_TRUE;
-    //                 this->SpawnPowerUps(box);
-    //                 SoundEngine->play2D("sounds/bleep.wav", GL_FALSE);
-    //             }
-    //             else {
-    //                 ShakeTime = 0.05f;
-    //                 Effects->Shake = GL_TRUE;
-    //                 SoundEngine->play2D("sounds/solid.wav", GL_FALSE);
-    //             }
-    //             Direction dir = std::get<1>(collision);
-    //             glm::vec2 diff_vector = std::get<2>(collision);
-    //             if (!(Ball->PassThrough && !box.IsSolid)) {
-    //                 if (dir == LEFT || dir == RIGHT) {
-    //                     Ball->Velocity.x = -Ball->Velocity.x;
-    //                     GLfloat penetration = Ball->Radius - std::abs(diff_vector.x);
-    //                     if (dir == LEFT)
-    //                         Ball->Position.x += penetration;
-    //                     else
-    //                         Ball->Position.x -= penetration;
-    //                 }
-    //                 else {
-    //                     Ball->Velocity.y = -Ball->Velocity.y;
-    //                     GLfloat penetration = Ball->Radius - std::abs(diff_vector.y);
-    //                     if (dir == UP)
-    //                         Ball->Position.y -= penetration;
-    //                     else
-    //                         Ball->Position.y += penetration;
-    //                 }
-    //             }
-    //         }
-    //     }
-    // }
-    // for (PowerUp &powerUp : this->PowerUps)
-    //     if (!powerUp.Destroyed) {
-    //         if (powerUp.Position.y >= this->Height)
-    //             powerUp.Destroyed = GL_TRUE;
-    //         if (CheckCollisionAABBAABB(*Player, powerUp)) {
-    //             ActivatePowerUp(powerUp);
-    //             powerUp.Destroyed = GL_TRUE;
-    //             powerUp.Activated = GL_TRUE;
-    //             SoundEngine->play2D("sounds/powerup.wav", GL_FALSE);
-    //         }
-    //     }
+    for (Block* block : blocks) {
+        if (!block->destroyed) {
+            Collision collision = CheckCollision(ball.get(), block);
+            if (std::get<0>(collision)) {
+                if (!block->solid) {
+                    block->destroyed = true;
+                    scene->removeChild(block->name);
+                }
+                Direction dir = std::get<1>(collision);
+                glm::vec2 diff_vector = std::get<2>(collision);
+                if (!(ball->passThrough && !block->solid)) {
+                    if (dir == Direction::LEFT || dir == Direction::RIGHT) {
+                        ball->velocity.dx = -ball->velocity.dx;
+                        GLfloat penetration = ball->radius - std::abs(diff_vector.x);
+                        if (dir == Direction::LEFT)
+                            ball->position.x += penetration;
+                        else
+                            ball->position.x -= penetration;
+                    }
+                    else {
+                        ball->velocity.dy = -ball->velocity.dy;
+                        GLfloat penetration = ball->radius - std::abs(diff_vector.y);
+                        if (dir == Direction::UP)
+                            ball->position.y -= penetration;
+                        else
+                            ball->position.y += penetration;
+                    }
+                }
+            }
+        }
+    }
 
-    // Collision result = CheckCollision(*Ball, *Player);
-    // if (!Ball->Stuck && std::get<0>(result)) {
-    //     GLfloat centerBoard = Player->Position.x + Player->Size.x / 2;
-    //     GLfloat distance = (Ball->Position.x + Ball->Radius) - centerBoard;
-    //     GLfloat percentage = distance / (Player->Size.x / 2);
-    //     GLfloat strength(2.0f);
-    //     glm::vec2 oldVelocity = Ball->Velocity;
-    //     Ball->Velocity.x = INITIAL_BALL_VELOCITY.x * percentage * strength;
-    //     Ball->Velocity = glm::normalize(Ball->Velocity) * glm::length(oldVelocity);
-    //     Ball->Velocity.y = -1 * abs(Ball->Velocity.y);
-
-    //     Ball->Stuck = Ball->Sticky;
-    //     SoundEngine->play2D("sounds/bleep.wav", GL_FALSE);
-    // }
+    Collision result = CheckCollision(ball.get(), paddle.get());
+    if (!STUCK && std::get<0>(result)) {
+        GLfloat centerBoard = paddle->position.x + paddle->size.width / 2;
+        GLfloat distance = (ball->position.x + ball->radius) - centerBoard;
+        GLfloat percentage = distance / (paddle->size.width / 2);
+        GLfloat strength(2.0f);
+        glm::vec2 oldVelocity = glm::vec2(
+                currentLevel->initialBallVelocity.dx,
+                currentLevel->initialBallVelocity.dy
+        );
+        ball->velocity.dx = currentLevel->initialBallVelocity.dx * percentage * strength;
+        //clamp so that there will always be some y velocity;
+        ball->velocity.dx =
+            (ball->velocity.dx > currentLevel->initialBallVelocity.dx)
+            ? currentLevel->initialBallVelocity.dx
+            : ball->velocity.dx;
+        glm::vec2 normalized = glm::normalize(
+                glm::vec2(ball->velocity.dx, ball->velocity.dy)) * glm::length(oldVelocity);
+        ball->velocity = Z::velocity2(normalized.x, normalized.y);
+        ball->velocity.dy = -1 * abs(ball->velocity.dy);
+    }
 }
 
-Collision Breakout::CheckCollision(std::shared_ptr<Z::SpriteNode> ball,
-                                   std::shared_ptr<Z::SpriteNode> other) {
-    // Z::vec2 center(ball.position + one.Radius);
+Collision Breakout::CheckCollision(Ball* ball,
+                                   Z::SpriteNode* other) {
+    glm::vec2 center(ball->position.x, ball->position.y);
+    center.x += ball->radius;
+    center.y += ball->radius;
 
-    // glm::vec2 aabb_half_extents(two.Size.x / 2, two.Size.y / 2);
-    // glm::vec2 aabb_center(
-    //         two.Position.x + aabb_half_extents.x,
-    //         two.Position.y + aabb_half_extents.y
-    // );
-    // glm::vec2 difference = center - aabb_center;
-    // glm::vec2 clamped = glm::clamp(difference, -aabb_half_extents, aabb_half_extents);
-    // glm::vec2 closest = aabb_center + clamped;
-    // glm::vec2 newDifference = closest - center;
+    glm::vec2 aabb_half_extents(other->size.width / 2, other->size.height / 2);
+    glm::vec2 aabb_center(
+            other->position.x + aabb_half_extents.x,
+            other->position.y + aabb_half_extents.y
+    );
+    glm::vec2 difference = center - aabb_center;
+    glm::vec2 clamped = glm::clamp(difference, -aabb_half_extents, aabb_half_extents);
+    glm::vec2 closest = aabb_center + clamped;
+    glm::vec2 newDifference = closest - center;
 
-    // if (glm::length(newDifference) < one.Radius)
-    //     return std::make_tuple(GL_TRUE, VectorDirection(newDifference), newDifference);
-    // else
-    //     return std::make_tuple(GL_FALSE, UP, glm::vec2(0, 0));
+    if (glm::length(newDifference) < ball->radius)
+        return std::make_tuple(GL_TRUE, VectorDirection(newDifference), newDifference);
+    else
+        return std::make_tuple(GL_FALSE, Direction::UP, glm::vec2(0, 0));
+}
+
+Direction Breakout::VectorDirection(glm::vec2 target) {
+    glm::vec2 compass[] = {
+        glm::vec2(0.0f, 1.0f),
+        glm::vec2(1.0f, 0.0f),
+        glm::vec2(0.0f, -1.0f),
+        glm::vec2(-1.0f, 0.0f),
+    };
+    GLfloat max = 0.0f;
+    GLuint best_match = -1;
+    for (GLuint i(0); i < 4; i++) {
+        GLfloat dot_product = glm::dot(glm::normalize(target), compass[i]);
+        if (dot_product > max) {
+            max = dot_product;
+            best_match = i;
+        }
+    }
+    return (Direction)best_match;
 }
 
 

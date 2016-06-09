@@ -6,13 +6,13 @@
 #include "velocity_2.h"
 
 #include <set>
+#include <string>
 
 class SpriteRenderer;
 
 namespace Z {
 
 class Engine;
-
 
 class Node {
     friend class SceneNode;
@@ -27,10 +27,14 @@ class Node {
         Node()
             : size(10,10)
             , position(0,0)
+            , zPosition(0)
+            , name("default")
             , velocity(0,0) {}
         Node(const Node& other)
             : size(other.size)
             , position(other.position)
+            , zPosition(other.zPosition)
+            , name(other.name)
             , velocity(other.velocity) {}
 
         ~Node();
@@ -39,9 +43,10 @@ class Node {
         pos2 position;
         velocity2 velocity;
         int zPosition;
+        std::string name;
 
         void addChild(Node* child);
-        // void removeChild(Node* child);
+        void removeChild(std::string name);
 
     private:
     protected:

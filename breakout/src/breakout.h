@@ -5,6 +5,9 @@
 #include "zengine/sprite_node.h"
 #include "zengine/vec_2.h"
 
+#include "ball.h"
+#include "block.h"
+
 #include <vector>
 #include <tuple>
 
@@ -24,7 +27,7 @@ enum class Direction {
     LEFT
 };
 
-typedef std::tuple<bool, Direction, Z::vec2> Collision;
+typedef std::tuple<bool, Direction, glm::vec2> Collision;
 
 class Breakout {
     public:
@@ -43,17 +46,17 @@ class Breakout {
         static std::shared_ptr<Z::SpriteNode> background;
 
         static std::vector<std::shared_ptr<Level>> levels;
-        static std::vector<Z::SpriteNode*> blocks;
+        static std::vector<Block*> blocks;
         static std::shared_ptr<Z::SpriteNode> paddle;
-        static std::shared_ptr<Z::SpriteNode> ball;
+        static std::shared_ptr<Ball> ball;
         static std::shared_ptr<Level> currentLevel;
 
         static void parseLevels(std::string levelFilePath);
         static void loadLevel(int levelNumber, Z::SceneNode* scene);
         static void doCollisions();
-        static Collision CheckCollision(std::shared_ptr<Z::SpriteNode> ball,
-                                        std::shared_ptr<Z::SpriteNode> other);
-        static Direction VectorDirection(Z::vec2 target);
+        static Collision CheckCollision(Ball* ball,
+                                        Z::SpriteNode* other);
+        static Direction VectorDirection(glm::vec2 target);
 
 };
 

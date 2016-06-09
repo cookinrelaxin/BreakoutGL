@@ -55,10 +55,10 @@
                 },
                 "texture": "./assets/textures/awesomeface.png",
                 "initial_velocity": {
-                    "x": 5,
-                    "y": -9
+                    "x": 7,
+                    "y": -12
                 },
-                "radius": 50
+                "radius": 25
             }
         }
     ]
