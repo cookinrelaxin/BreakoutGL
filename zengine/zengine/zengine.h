@@ -19,6 +19,11 @@
 
 #include "scene_node.h"
 
+#include <irrklang/irrKlang.h>
+
+#include "particle_generator.h"
+#include "post_processor.h"
+#include "text_renderer.h"
 
 namespace Z {
 
@@ -44,24 +49,17 @@ class Engine {
         // Initialize game engine
         static void init();
 
-        static void screenWidth(unsigned int width) {
-            sWidth = width;
-        };
-        static void screenHeight(unsigned int height) {
-            sHeight = height;
-        };
-        static unsigned int screenWidth() {
-            return sWidth;
-        };
-        static unsigned int screenHeight() {
-            return sHeight;
-        };
     private:
         static void configureGLEW();
-        static void configureGL();
+        static void configureGL(int width, int height);
         static void configureWindow(GLFWwindow* window);
-        static GLFWwindow* createWindow();
+        static GLFWwindow* createWindow(int width, int height);
         static void cleanup();
+        static void keyHandler(GLFWwindow* window,
+                              int key,
+                              int scancode,
+                              int action,
+                              int mode);
 
         static std::function<SceneNode*(void)> initCallback;
         static std::function<bool(float)> updateCallback;
@@ -72,8 +70,12 @@ class Engine {
         static std::function<void(KeyDownEvent)> keyDownCallback;
         static std::function<void(KeyUpEvent)> keyUpCallback;
 
-        static unsigned int sWidth;
-        static unsigned int sHeight;
+        static SceneNode* scene;
+        static SpriteRenderer* renderer;
+        static ParticleGenerator* particles;
+        static PostProcessor* effects;
+        static TextRenderer* text;
+	static irrklang::ISoundEngine* soundEngine;
 };
 
 };

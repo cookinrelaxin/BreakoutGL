@@ -9,8 +9,8 @@
 
 TextRenderer::TextRenderer(GLuint width, GLuint height) {
     assert(glGetError() == GL_NO_ERROR);
-    this->TextShader = ResourceManager::LoadShader("shaders/text.vs",
-                                                   "shaders/text.fs",
+    this->TextShader = ResourceManager::LoadShader("./assets/shaders/text.vs",
+                                                   "./assets/shaders/text.fs",
                                                    nullptr,
                                                    "text"
     );

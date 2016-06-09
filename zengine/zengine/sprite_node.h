@@ -5,24 +5,33 @@
 
 #include <string>
 
+#include "color_4.h"
+#include "size_2.h"
+#include "texture.h"
+
 namespace Z {
 
-class SpriteNode {
+class SpriteNode : public Node {
     public:
         SpriteNode();
+        SpriteNode(size2       size,
+                   pos2        position,
+                   std::string texturePath,
+                   color4      color,
+                   float       rotation,
+                   velocity2   velocity);
         ~SpriteNode();
 
-        glm::vec4 color();
-        void color(glm::vec4 newColor);
+        void setTexture(std::string texturePath);
 
-        std::string texture();
-        void texture(std::string texturePath);
+        color4 color;
+        std::string texturePath;
+        float rotation;
     private:
-    protected:
-        void draw(SpriteRenderer& renderer) const;
 
-        glm::vec4 color_;
-        std::string texturePath_;
+    protected:
+        void draw(SpriteRenderer* renderer);
+        Texture2D texture;
 };
 
 };

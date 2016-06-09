@@ -1,18 +1,18 @@
 #include "scene_node.h"
+#include <iostream>
 
 namespace Z {
 
-SceneNode::SceneNode() : backgroundColor_(1.0,1.0,1.0,1.0) {}
+SceneNode::SceneNode() : backgroundColor(1.0,1.0,1.0,1.0) {}
 
 SceneNode::~SceneNode() {
 }
 
-glm::vec4 SceneNode::backgroundColor() {
-    return backgroundColor_;
-}
-
-void SceneNode::backgroundColor(glm::vec4 newBackgroundColor) {
-    backgroundColor_ = newBackgroundColor;
+void SceneNode::draw(SpriteRenderer* renderer) {
+    // std::cout << "draw scene node" << std::endl;
+    // std::cout << "children_.size(): " << children_.size() << std::endl;
+    for (Node* node : children_)
+        node->draw(renderer);
 }
 
 };

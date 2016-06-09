@@ -8,15 +8,15 @@
 namespace Z {
 
 class SceneNode : public Node {
+    friend class Engine;
     public:
         SceneNode();
         ~SceneNode();
 
-        glm::vec4 backgroundColor();
-        void backgroundColor(glm::vec4 newBackgroundColor);
+        glm::vec4 backgroundColor;
     private:
     protected:
-        glm::vec4 backgroundColor_;
+        void draw(SpriteRenderer* renderer);
 
 };
 

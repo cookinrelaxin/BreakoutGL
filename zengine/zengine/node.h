@@ -1,29 +1,44 @@
 #ifndef Z_NODE_H
 #define Z_NODE_H
 
-#include "glm/glm.hpp"
-#include "sprite_renderer.h"
-#include <vector>
+#include "size_2.h"
+#include "pos_2.h"
+#include "velocity_2.h"
+
+#include <set>
+
+class SpriteRenderer;
 
 namespace Z {
 
 class Engine;
 
+
 class Node {
+    friend class SceneNode;
+
+    struct NodeComparator {
+        bool operator() (const Node* left, const Node* right) {
+            return left->zPosition < right->zPosition;
+        }
+    };
+
     public:
         Node()
-            : size_(10,10)
-            , position_(0,0) {}
+            : size(10,10)
+            , position(0,0)
+            , velocity(0,0) {}
+        Node(const Node& other)
+            : size(other.size)
+            , position(other.position)
+            , velocity(other.velocity) {}
+
         ~Node();
 
-        glm::vec2 size();
-        void size(glm::vec2 newSize);
-
-        glm::vec2 position();
-        void position(glm::vec2 newPosition);
-
-        int zPosition();
-        void zPosition(int newZPosition);
+        size2 size;
+        pos2 position;
+        velocity2 velocity;
+        int zPosition;
 
         void addChild(Node* child);
         // void removeChild(Node* child);
@@ -31,13 +46,9 @@ class Node {
     private:
     protected:
 
-        virtual void draw(SpriteRenderer& renderer) const;
+        virtual void draw(SpriteRenderer* renderer);
 
-        glm::vec2 size_;
-        glm::vec2 position_;
-        int zPosition_;
-
-        std::vector<Node*> children_;
+        std::multiset<Node*, NodeComparator> children_;
 };
 
 };
