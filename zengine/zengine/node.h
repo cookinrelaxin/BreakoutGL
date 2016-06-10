@@ -9,6 +9,7 @@
 #include <string>
 
 class SpriteRenderer;
+class TextRenderer;
 
 namespace Z {
 
@@ -45,13 +46,16 @@ class Node {
         int zPosition;
         std::string name;
 
+        Node* parent;
+
         void addChild(Node* child);
         void removeChild(std::string name);
 
     private:
     protected:
 
-        virtual void draw(SpriteRenderer* renderer);
+        virtual void draw(SpriteRenderer* spriteRenderer,
+                          TextRenderer* textRenderer);
 
         std::multiset<Node*, NodeComparator> children_;
 };

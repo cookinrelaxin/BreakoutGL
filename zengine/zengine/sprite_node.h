@@ -30,7 +30,7 @@ class SpriteNode : public Node {
     private:
 
     protected:
-        void draw(SpriteRenderer* renderer);
+        void draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer);
         Texture2D texture;
 };
 

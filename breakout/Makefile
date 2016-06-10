@@ -11,7 +11,7 @@ LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL
 EXEC = breakout.bin
 
 #SOURCES = $(wildcard *.cpp)
-SOURCES = ./src/main.cpp ./src/breakout.cpp
+SOURCES = ./src/main.cpp ./src/breakout.cpp ./src/menu.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 

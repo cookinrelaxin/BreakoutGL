@@ -3,10 +3,12 @@
 
 #include "zengine/zengine.h"
 #include "zengine/sprite_node.h"
+#include "zengine/text_node.h"
 #include "zengine/vec_2.h"
 
 #include "ball.h"
 #include "block.h"
+#include "menu.h"
 
 #include <vector>
 #include <tuple>
@@ -49,7 +51,10 @@ class Breakout {
         static std::vector<Block*> blocks;
         static std::shared_ptr<Z::SpriteNode> paddle;
         static std::shared_ptr<Ball> ball;
+        static std::shared_ptr<Menu> menu;
         static std::shared_ptr<Level> currentLevel;
+        static std::shared_ptr<Z::TextNode> livesLabel;
+        static GameState state;
 
         static void parseLevels(std::string levelFilePath);
         static void loadLevel(int levelNumber, Z::SceneNode* scene);

@@ -11,6 +11,7 @@ Node::~Node() {
 
 void Node::addChild(Node* child) {
     children_.insert(child);
+    child->parent = this;
 }
 
 void Node::removeChild(std::string name) {
@@ -20,10 +21,10 @@ void Node::removeChild(std::string name) {
     }
 }
 
-void Node::draw(SpriteRenderer* renderer) {
+void Node::draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer) {
     // std::cout << "draw node children" << std::endl;
     for (Node* node : children_)
-        node->draw(renderer);
+        node->draw(spriteRenderer, textRenderer);
 }
 
 };

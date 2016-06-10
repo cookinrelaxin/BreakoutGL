@@ -12,7 +12,7 @@ GameObject::GameObject()
 GameObject::GameObject(glm::vec2 pos,
                        glm::vec2 size,
                        Texture2D sprite,
-                       glm::vec3 color,
+                       glm::vec4 color,
                        glm::vec2 velocity) 
                 : Position(pos)
                 , Size(size)

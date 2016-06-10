@@ -90,7 +90,7 @@ void TextRenderer::RenderText(std::string text,
                               GLfloat x,
                               GLfloat y,
                               GLfloat scale,
-                              glm::vec3 color,
+                              glm::vec4 color,
                               GLboolean centered) {
     if (centered) {
         // a hack...
@@ -98,7 +98,7 @@ void TextRenderer::RenderText(std::string text,
     }
     assert(glGetError() == GL_NO_ERROR);
     this->TextShader.Use();
-    this->TextShader.SetVector3f("textColor", color);
+    this->TextShader.SetVector4f("textColor", color);
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(this->VAO);
     assert(glGetError() == GL_NO_ERROR);

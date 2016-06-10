@@ -62,12 +62,13 @@ void SpriteNode::setTexture(std::string texturePath) {
             texturePath);
 }
 
-void SpriteNode::draw(SpriteRenderer *renderer) {
-    renderer->DrawSprite(texture,
-                        glm::vec2(position.x, position.y),
+void SpriteNode::draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer) {
+    spriteRenderer->DrawSprite(texture,
+                        glm::vec2(position.x + parent->position.x,
+                                  position.y + parent->position.y),
                         glm::vec2(size.width, size.height),
                         rotation,
-                        glm::vec3(color.r, color.g, color.b));
+                        glm::vec4(color.r, color.g, color.b, color.a));
 }
 
 };

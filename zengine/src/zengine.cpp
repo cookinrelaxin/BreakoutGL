@@ -155,6 +155,10 @@ void Engine::init() {
  
     glfwShowWindow(window);
     while (updateCallback(deltaTime)) {
+        deltaTime = currentFrame - lastFrame;
+        lastFrame = currentFrame;
+        currentFrame = glfwGetTime();
+
         glfwPollEvents();
         deltaTime = currentFrame - lastFrame;
         glClearColor(scene->backgroundColor.x,
@@ -163,7 +167,7 @@ void Engine::init() {
                      scene->backgroundColor.w);
         glClear(GL_COLOR_BUFFER_BIT);
 	effects->BeginRender();
-	scene->draw(renderer);
+	scene->draw(renderer, text);
 	effects->EndRender();
 	effects->Render(currentFrame);
         

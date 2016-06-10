@@ -16,7 +16,7 @@ class SceneNode : public Node {
         glm::vec4 backgroundColor;
     private:
     protected:
-        void draw(SpriteRenderer* renderer);
+        void draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer);
 
 };
 

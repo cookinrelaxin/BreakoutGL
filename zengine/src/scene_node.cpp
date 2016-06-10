@@ -8,11 +8,9 @@ SceneNode::SceneNode() : backgroundColor(1.0,1.0,1.0,1.0) {}
 SceneNode::~SceneNode() {
 }
 
-void SceneNode::draw(SpriteRenderer* renderer) {
-    // std::cout << "draw scene node" << std::endl;
-    // std::cout << "children_.size(): " << children_.size() << std::endl;
+void SceneNode::draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer) {
     for (Node* node : children_)
-        node->draw(renderer);
+        node->draw(spriteRenderer, textRenderer);
 }
 
 };

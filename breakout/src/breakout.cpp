@@ -30,15 +30,21 @@ Z::SceneNode* Breakout::scene;
 std::vector<std::shared_ptr<Level>> Breakout::levels;
 std::vector<Block*> Breakout::blocks;
 std::shared_ptr<Z::SpriteNode> Breakout::paddle;
+std::shared_ptr<Z::TextNode> Breakout::livesLabel;
 std::shared_ptr<Ball> Breakout::ball;
+std::shared_ptr<Menu> Breakout::menu;
 std::shared_ptr<Z::SpriteNode> Breakout::background;
 std::shared_ptr<Level> Breakout::currentLevel;
+GameState Breakout::state;
 
 bool MOVE_LEFT = false;
 bool MOVE_RIGHT = false;
-float PADDLE_SPEED = 20.0;
+float PADDLE_SPEED = 1000.0;
+float TIME_SCALE = 1.0;
 bool EXIT = false;
 bool STUCK = true;
+
+int LIVES = 3;
 
 void Breakout::parseLevels(std::string levelFilePath) {
     std::ifstream file(levelFilePath);
@@ -191,14 +197,34 @@ Z::SceneNode* Breakout::init() {
     scene->addChild(paddle.get());
 
     background = std::make_shared<Z::SpriteNode>();
-    background->color = Z::color4(1.0, 0.0, 0.0, 0.0);
+    background->color = Z::color4(1.0, 1.0, 1.0, 1.0);
     background->size = scene->size;
     background->zPosition = -1;
     background->setTexture("./assets/textures/background.png");
 
     scene->addChild(background.get());
 
+    livesLabel = std::make_shared<Z::TextNode>();
+    livesLabel->position = Z::pos2(10, 10);
+    livesLabel->zPosition = 3;
+    livesLabel->text = "Lives: " + std::to_string(LIVES);
+
+    scene->addChild(livesLabel.get());
+
+    menu = std::make_shared<Menu>(
+            "Menu",
+            Z::size2(scene->size.width / 2, scene->size.height * .8)
+    );
+    menu->zPosition = 3;
+    menu->position = Z::pos2(scene->size.width / 2 - menu->size.width / 2,
+                                 scene->size.height / 2 - menu->size.height / 2);
+
+    menu->hide();
+    scene->addChild(menu.get());
+
     loadLevel(0, scene);
+
+    state = GameState::ACTIVE;
 
     return scene;
 }
@@ -206,7 +232,7 @@ Z::SceneNode* Breakout::init() {
 bool Breakout::update(float dt) {
     if (EXIT) return false;
     if (MOVE_LEFT) {
-        paddle->position.x -= PADDLE_SPEED;
+        paddle->position.x -= PADDLE_SPEED * dt * TIME_SCALE;
         if (paddle->position.x <= 0) {
             paddle->position.x = 0;
         }
@@ -217,7 +243,7 @@ bool Breakout::update(float dt) {
     }
 
     if (MOVE_RIGHT) {
-        paddle->position.x += PADDLE_SPEED;
+        paddle->position.x += PADDLE_SPEED * dt * TIME_SCALE;
         if (paddle->position.x + paddle->size.width >= scene->size.width) {
             paddle->position.x = scene->size.width - paddle->size.width;
         }
@@ -228,8 +254,8 @@ bool Breakout::update(float dt) {
     }
 
     if (!STUCK) {
-        ball->position.x += ball->velocity.dx;
-        ball->position.y += ball->velocity.dy;
+        ball->position.x += ball->velocity.dx * dt * TIME_SCALE;
+        ball->position.y += ball->velocity.dy * dt * TIME_SCALE;
     }
 
     doCollisions();
@@ -251,6 +277,8 @@ bool Breakout::update(float dt) {
                paddle->position.x + paddle->size.width / 2 - ball->size.width / 2,
                paddle->position.y - ball->size.height);
        STUCK = true;
+       LIVES--;
+        livesLabel->text = "Lives: " + std::to_string(LIVES);
     }
 
 
@@ -292,6 +320,20 @@ void Breakout::keyDown(Z::KeyDownEvent event) {
             if (STUCK) {
                 STUCK = false;
                 ball->velocity = currentLevel->initialBallVelocity;
+            }
+            break;
+        }
+
+        case Z::KeyInput::M: {
+            if (state == GameState::ACTIVE) {
+                state = GameState::MENU;
+                menu->show();
+                TIME_SCALE = 0.05;
+            }
+            else {
+                state = GameState::ACTIVE;
+                menu->hide();
+                TIME_SCALE = 1.0;
             }
             break;
         }
