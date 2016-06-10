@@ -208,6 +208,7 @@ Z::SceneNode* Breakout::init() {
     livesLabel->position = Z::pos2(10, 10);
     livesLabel->zPosition = 3;
     livesLabel->text = "Lives: " + std::to_string(LIVES);
+    livesLabel->fontSize = 40.0;
 
     scene->addChild(livesLabel.get());
 

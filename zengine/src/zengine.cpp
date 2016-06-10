@@ -29,7 +29,7 @@ SpriteRenderer* Engine::renderer;
 ParticleGenerator* Engine::particles;
 PostProcessor* Engine::effects;
 TextRenderer* Engine::text;
-irrklang::ISoundEngine* Engine::soundEngine;
+// irrklang::ISoundEngine* Engine::soundEngine;
 
 void Engine::registerInitCallback(std::function<SceneNode*(void)> callback) {
     initCallback = callback;
@@ -92,8 +92,9 @@ void Engine::init() {
     int width = scene->size.width;
     int height = scene->size.height;
     assert(glGetError() == GL_NO_ERROR);
+    glfwSetWindowSize(window, width, height);
 
-    configureGL(width, height);
+    configureGL(window);
 
     assert(glGetError() == GL_NO_ERROR);
 
@@ -139,13 +140,23 @@ void Engine::init() {
                                 height
     );
     assert(glGetError() == GL_NO_ERROR);
-    text = new TextRenderer(width, height);
-    assert(glGetError() == GL_NO_ERROR);
-    text->Load("./assets/fonts/OCRAEXT.TTF", 24);
+
+    int pixelWidth, pixelHeight;
+    glfwGetFramebufferSize(window, &pixelWidth, &pixelHeight);
+
+    std::cout << "pixelWidth: " << pixelWidth << std::endl;
+    std::cout << "pixelHeight: " << pixelHeight << std::endl;
+    std::cout << "screen coordinates width: " << width << std::endl;
+    std::cout << "screen coordinates height: " << height << std::endl;
+
+    text = new TextRenderer(pixelWidth, pixelHeight);
     assert(glGetError() == GL_NO_ERROR);
 
-    soundEngine = irrklang::createIrrKlangDevice();
-    soundEngine->loadPlugins("ikpMP3.dylib");
+    text->Load("./assets/fonts/OCRAEXT.TTF");
+    assert(glGetError() == GL_NO_ERROR);
+
+    // soundEngine = irrklang::createIrrKlangDevice();
+    // soundEngine->loadPlugins("ikpMP3.dylib");
     assert(glGetError() == GL_NO_ERROR);
 
     float currentFrame, lastFrame;
@@ -213,7 +224,9 @@ void Engine::cleanup() {
     glfwTerminate();
 }
 
-void Engine::configureGL(int width, int height) {
+void Engine::configureGL(GLFWwindow* window) {
+    int width, height;
+    glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glEnable(GL_CULL_FACE);
     glEnable(GL_BLEND);

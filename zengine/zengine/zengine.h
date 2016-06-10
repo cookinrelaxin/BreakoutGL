@@ -19,7 +19,7 @@
 
 #include "scene_node.h"
 
-#include <irrklang/irrKlang.h>
+// #include <irrklang/irrKlang.h>
 
 #include "particle_generator.h"
 #include "post_processor.h"
@@ -51,7 +51,7 @@ class Engine {
 
     private:
         static void configureGLEW();
-        static void configureGL(int width, int height);
+        static void configureGL(GLFWwindow* window);
         static void configureWindow(GLFWwindow* window);
         static GLFWwindow* createWindow(int width, int height);
         static void cleanup();
@@ -75,7 +75,7 @@ class Engine {
         static ParticleGenerator* particles;
         static PostProcessor* effects;
         static TextRenderer* text;
-	static irrklang::ISoundEngine* soundEngine;
+	// static irrklang::ISoundEngine* soundEngine;
 };
 
 };

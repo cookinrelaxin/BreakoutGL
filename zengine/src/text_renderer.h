@@ -23,7 +23,7 @@ class TextRenderer {
 
         TextRenderer(GLuint width, GLuint height);
 
-        void Load(std::string font, GLuint fontSize);
+        void Load(std::string font);
         void RenderText(std::string text,
                         GLfloat x,
                         GLfloat y,
@@ -33,7 +33,6 @@ class TextRenderer {
         );
     private:
         GLuint VAO, VBO;
-        GLuint fontSize;
 };
 
 #endif
