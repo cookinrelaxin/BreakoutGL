@@ -207,8 +207,12 @@ Z::SceneNode* Breakout::init() {
     livesLabel = std::make_shared<Z::TextNode>();
     livesLabel->position = Z::pos2(10, 10);
     livesLabel->zPosition = 3;
-    livesLabel->text = "Lives: " + std::to_string(LIVES);
-    livesLabel->fontSize = 40.0;
+    // livesLabel->text = "Lives: " + std::to_string(LIVES);
+    std::stringstream temp;
+    for (char i(65); i < 91; ++i)
+        temp << i;
+    livesLabel->text = temp.str();
+    livesLabel->fontSize = 5.0;
 
     scene->addChild(livesLabel.get());
 
@@ -221,7 +225,7 @@ Z::SceneNode* Breakout::init() {
                                  scene->size.height / 2 - menu->size.height / 2);
 
     menu->hide();
-    scene->addChild(menu.get());
+    // scene->addChild(menu.get());
 
     loadLevel(0, scene);
 
