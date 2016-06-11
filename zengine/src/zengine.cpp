@@ -141,26 +141,18 @@ void Engine::init() {
     assert(glGetError() == GL_NO_ERROR);
     text = new TextRenderer(width, height);
     assert(glGetError() == GL_NO_ERROR);
-    text->Load("./assets/fonts/OCRAEXT.TTF", 24);
+    // text->Load("./assets/fonts/OCRAEXT.TTF", 24);
     assert(glGetError() == GL_NO_ERROR);
 
     soundEngine = irrklang::createIrrKlangDevice();
     soundEngine->loadPlugins("ikpMP3.dylib");
     assert(glGetError() == GL_NO_ERROR);
 
-    float currentFrame, lastFrame;
-    currentFrame = lastFrame = glfwGetTime();
-    float deltaTime = currentFrame - lastFrame;
-
  
     glfwShowWindow(window);
-    while (updateCallback(deltaTime)) {
-        deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-        currentFrame = glfwGetTime();
+    while (updateCallback(glfwGetTime())) {
 
         glfwPollEvents();
-        deltaTime = currentFrame - lastFrame;
         glClearColor(scene->backgroundColor.x,
                      scene->backgroundColor.y,
                      scene->backgroundColor.z,
@@ -169,7 +161,7 @@ void Engine::init() {
 	effects->BeginRender();
 	scene->draw(renderer, text);
 	effects->EndRender();
-	effects->Render(currentFrame);
+	effects->Render(glfwGetTime());
         
         glfwSwapBuffers(window);
     };

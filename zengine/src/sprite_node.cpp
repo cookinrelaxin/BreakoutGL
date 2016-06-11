@@ -64,11 +64,19 @@ void SpriteNode::setTexture(std::string texturePath) {
 
 void SpriteNode::draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer) {
     spriteRenderer->DrawSprite(texture,
-                        glm::vec2(position.x + parent->position.x,
-                                  position.y + parent->position.y),
-                        glm::vec2(size.width, size.height),
-                        rotation,
-                        glm::vec4(color.r, color.g, color.b, color.a));
+                               glm::vec2(position.x + parent->position.x,
+                                         position.y + parent->position.y),
+                               glm::vec2(size.width, size.height),
+                               rotation,
+                               glm::vec4(color.r, color.g, color.b, color.a));
+}
+
+void SpriteNode::hide() {
+    color.a = 0.0;
+}
+
+void SpriteNode::show() {
+    color.a = 1.0;
 }
 
 };

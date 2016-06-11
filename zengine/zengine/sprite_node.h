@@ -27,6 +27,9 @@ class SpriteNode : public Node {
         color4 color;
         std::string texturePath;
         float rotation;
+
+        void hide();
+        void show();
     private:
 
     protected:

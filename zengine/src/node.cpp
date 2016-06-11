@@ -15,10 +15,15 @@ void Node::addChild(Node* child) {
 }
 
 void Node::removeChild(std::string name) {
-    for (auto it  = children_.begin(); it != children_.end(); ++it) {
-        if ((*it)->name == name)
-            children_.erase(it);
+    auto toErase = children_.end();
+    for (auto it = children_.begin(); it != children_.end(); ++it) {
+        if ((*it)->name == name) {
+            toErase = it;
+            break;
+        }
     }
+    if (toErase != children_.end())
+        children_.erase(toErase);
 }
 
 void Node::draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer) {
@@ -26,5 +31,15 @@ void Node::draw(SpriteRenderer* spriteRenderer, TextRenderer* textRenderer) {
     for (Node* node : children_)
         node->draw(spriteRenderer, textRenderer);
 }
+
+void Node::hide() {
+    for (Node* node : children_)
+        node->hide();
+};
+
+void Node::show() {
+    for (Node* node : children_)
+        node->show();
+};
 
 };

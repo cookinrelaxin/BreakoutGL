@@ -7,7 +7,7 @@ namespace Z {
 
 class pos2 {
     public:
-        pos2();
+        pos2() : x(0), y(0) {};
         pos2(const pos2& other) : x(other.x), y(other.y) {}
         pos2(float x, float y) : x(x), y(y) {}
 

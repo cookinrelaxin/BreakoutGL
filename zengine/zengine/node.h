@@ -51,11 +51,15 @@ class Node {
         void addChild(Node* child);
         void removeChild(std::string name);
 
+        virtual void hide();
+        virtual void show();
+
     private:
     protected:
 
         virtual void draw(SpriteRenderer* spriteRenderer,
                           TextRenderer* textRenderer);
+
 
         std::multiset<Node*, NodeComparator> children_;
 };

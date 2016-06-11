@@ -43,6 +43,7 @@ float PADDLE_SPEED = 1000.0;
 float TIME_SCALE = 1.0;
 bool EXIT = false;
 bool STUCK = true;
+float lastTime(0), dt(0);
 
 int LIVES = 3;
 
@@ -207,17 +208,46 @@ Z::SceneNode* Breakout::init() {
     livesLabel = std::make_shared<Z::TextNode>();
     livesLabel->position = Z::pos2(10, 10);
     livesLabel->zPosition = 3;
+    livesLabel->fontSize = 30;
     livesLabel->text = "Lives: " + std::to_string(LIVES);
 
     scene->addChild(livesLabel.get());
 
+    // menu = std::make_shared<Menu>(
+    //         "Menu",
+    //         Z::size2(scene->size.width / 2, scene->size.height * .8)
+    // );
+    // menu->zPosition = 3;
+    // menu->position = Z::pos2(scene->size.width / 2 - menu->size.width / 2,
+    //                              scene->size.height / 2 - menu->size.height / 2);
+
+    // menu->hide();
+
     menu = std::make_shared<Menu>(
             "Menu",
-            Z::size2(scene->size.width / 2, scene->size.height * .8)
+            Z::size2(scene->size.width, scene->size.height)
     );
     menu->zPosition = 3;
-    menu->position = Z::pos2(scene->size.width / 2 - menu->size.width / 2,
-                                 scene->size.height / 2 - menu->size.height / 2);
+
+    Z::TextNode* startLabel = new Z::TextNode;
+    startLabel->text = "Start";
+    startLabel->fontSize = 30;
+    menu->addOption(startLabel);
+
+    Z::TextNode* worthlessLabel1 = new Z::TextNode;
+    worthlessLabel1->text = "worthlessLabel1";
+    worthlessLabel1->fontSize = 30;
+    menu->addOption(worthlessLabel1);
+
+    Z::TextNode* worthlessLabel2 = new Z::TextNode;
+    worthlessLabel2->text = "worthlessLabel2";
+    worthlessLabel2->fontSize = 30;
+    menu->addOption(worthlessLabel2);
+
+    Z::TextNode* worthlessLabel3 = new Z::TextNode;
+    worthlessLabel3->text = "worthlessLabel3";
+    worthlessLabel3->fontSize = 30;
+    menu->addOption(worthlessLabel3);
 
     menu->hide();
     scene->addChild(menu.get());
@@ -229,7 +259,8 @@ Z::SceneNode* Breakout::init() {
     return scene;
 }
 
-bool Breakout::update(float dt) {
+bool Breakout::update(float currentTime) {
+    dt = currentTime - lastTime;
     if (EXIT) return false;
     if (MOVE_LEFT) {
         paddle->position.x -= PADDLE_SPEED * dt * TIME_SCALE;
@@ -281,7 +312,7 @@ bool Breakout::update(float dt) {
         livesLabel->text = "Lives: " + std::to_string(LIVES);
     }
 
-
+    lastTime = currentTime;
     return true;
 }
 
@@ -303,6 +334,7 @@ void Breakout::mouseMove(Z::MouseMoveEvent event) {
 }
 
 void Breakout::keyDown(Z::KeyDownEvent event) {
+    menu->keyDown(event);
     switch (event.key()) {
         case Z::KeyInput::A: {
             MOVE_LEFT = true;
@@ -325,10 +357,11 @@ void Breakout::keyDown(Z::KeyDownEvent event) {
         }
 
         case Z::KeyInput::M: {
+            menu->keyDown(event);
             if (state == GameState::ACTIVE) {
                 state = GameState::MENU;
                 menu->show();
-                TIME_SCALE = 0.05;
+                TIME_SCALE = 0.0;
             }
             else {
                 state = GameState::ACTIVE;

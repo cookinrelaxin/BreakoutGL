@@ -35,10 +35,14 @@ TextRenderer::TextRenderer(GLuint width, GLuint height) {
     assert(glGetError() == GL_NO_ERROR);
 }
 
-void TextRenderer::Load(std::string font, GLuint fontSize) {
-    this->fontSize = fontSize;
+std::map<GLchar, Character> TextRenderer::Load(std::string font, GLuint fontSize) {
+
+    std::cout << "load font: " << font << std::endl;
+    std::map<GLchar, Character> fontMap;
+
+    // this->fontSize = fontSize;
     assert(glGetError() == GL_NO_ERROR);
-    this->Characters.clear();
+    // this->Characters.clear();
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
         std::cout << "ERROR::FREETYPE: Could not init FreeType library" << std::endl;
@@ -78,24 +82,45 @@ void TextRenderer::Load(std::string font, GLuint fontSize) {
             glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
             static_cast<GLuint>(face->glyph->advance.x)
         };
-        Characters.insert(std::pair<GLchar, Character>(c, character));
+        fontMap.insert(std::pair<GLchar, Character>(c, character));
+        // Characters.insert(std::pair<GLchar, Character>(c, character));
     }
+
+    std::tuple<std::string, GLuint> f(font, fontSize);
+    fonts.insert(std::make_pair(f, fontMap));
     glBindTexture(GL_TEXTURE_2D, 0);
     FT_Done_Face(face);
     FT_Done_FreeType(ft);
     assert(glGetError() == GL_NO_ERROR);
+
+    return fontMap;
 }
 
 void TextRenderer::RenderText(std::string text,
                               GLfloat x,
                               GLfloat y,
-                              GLfloat scale,
-                              glm::vec4 color,
-                              GLboolean centered) {
-    if (centered) {
-        // a hack...
-        //x -= (text.size() / 2) * 18;
-    }
+                              Font f,
+                              bool centered,
+                              glm::vec4 color) {
+    std::map<GLchar, Character> Characters;
+    if (fonts.find(f) != fonts.end())
+        Characters = fonts.find(f)->second;
+    else
+        Characters = Load(std::get<0>(f), std::get<1>(f));
+
+    auto centerOffset = [&]() {
+        if (centered) {
+            auto acc(0);
+            for (GLchar c : text)
+                acc += Characters[c].Size.x
+                    + Characters[c].Bearing.x
+                    + Characters[c].Advance >> 6; 
+            return acc;
+        }
+        else
+            return 0;
+    }();
+
     assert(glGetError() == GL_NO_ERROR);
     this->TextShader.Use();
     this->TextShader.SetVector4f("textColor", color);
@@ -103,15 +128,19 @@ void TextRenderer::RenderText(std::string text,
     glBindVertexArray(this->VAO);
     assert(glGetError() == GL_NO_ERROR);
 
+    // std::cout << "font size: " << fontSize << std::endl;
+    // std::cout << "font name: " << std::get<0>(f) << std::endl;
+    // std::cout << "totalWidth: " << totalWidth << std::endl;
+
     std::string::const_iterator c;
     for (c = text.begin(); c != text.end(); c++) {
         Character ch = Characters[*c];
 
-        GLfloat xpos = x + ch.Bearing.x * scale;
-        GLfloat ypos = y + (this->Characters['H'].Bearing.y - ch.Bearing.y) * scale;
+        GLfloat xpos = x + ch.Bearing.x - (centerOffset / 2);
+        GLfloat ypos = y + (Characters['H'].Bearing.y - ch.Bearing.y);
 
-        GLfloat w = ch.Size.x * scale;
-        GLfloat h = ch.Size.y * scale;
+        GLfloat w = ch.Size.x;
+        GLfloat h = ch.Size.y;
         assert(glGetError() == GL_NO_ERROR);
 
         GLfloat vertices[6][4] = {
@@ -134,7 +163,7 @@ void TextRenderer::RenderText(std::string text,
         glDrawArrays(GL_TRIANGLES, 0, 6);
         assert(glGetError() == GL_NO_ERROR);
 
-        x += (ch.Advance >> 6) * scale;
+        x += (ch.Advance >> 6);
     }
     assert(glGetError() == GL_NO_ERROR);
     glBindVertexArray(0);

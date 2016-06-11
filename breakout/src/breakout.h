@@ -12,10 +12,12 @@
 
 #include <vector>
 #include <tuple>
+#include <future>
 
 struct Level;
 
 enum GameState {
+    LOADING,
     ACTIVE,
     MENU,
     WIN,
@@ -34,7 +36,7 @@ typedef std::tuple<bool, Direction, glm::vec2> Collision;
 class Breakout {
     public:
         static Z::SceneNode* init();
-        static bool update(float dt);
+        static bool update(float currentTime);
         static void shutdown();
 
         static void mouseDown(Z::MouseDownEvent event);
@@ -54,6 +56,10 @@ class Breakout {
         static std::shared_ptr<Menu> menu;
         static std::shared_ptr<Level> currentLevel;
         static std::shared_ptr<Z::TextNode> livesLabel;
+
+        static std::shared_ptr<Z::TextNode> loadingLabel;
+        static std::future<bool> loadingFuture;
+
         static GameState state;
 
         static void parseLevels(std::string levelFilePath);
