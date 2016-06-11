@@ -56,6 +56,7 @@ class Breakout {
         static std::shared_ptr<Menu> menu;
         static std::shared_ptr<Level> currentLevel;
         static std::shared_ptr<Z::TextNode> livesLabel;
+        static std::shared_ptr<Z::TextNode> toMenuLabel;
 
         static std::shared_ptr<Z::TextNode> loadingLabel;
         static std::future<bool> loadingFuture;

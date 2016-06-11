@@ -31,6 +31,7 @@ std::vector<std::shared_ptr<Level>> Breakout::levels;
 std::vector<Block*> Breakout::blocks;
 std::shared_ptr<Z::SpriteNode> Breakout::paddle;
 std::shared_ptr<Z::TextNode> Breakout::livesLabel;
+std::shared_ptr<Z::TextNode> Breakout::toMenuLabel;
 std::shared_ptr<Ball> Breakout::ball;
 std::shared_ptr<Menu> Breakout::menu;
 std::shared_ptr<Z::SpriteNode> Breakout::background;
@@ -45,7 +46,7 @@ bool EXIT = false;
 bool STUCK = true;
 float lastTime(0), dt(0);
 
-int LIVES = 3;
+unsigned int LIVES = 3;
 
 void Breakout::parseLevels(std::string levelFilePath) {
     std::ifstream file(levelFilePath);
@@ -213,21 +214,21 @@ Z::SceneNode* Breakout::init() {
 
     scene->addChild(livesLabel.get());
 
-    // menu = std::make_shared<Menu>(
-    //         "Menu",
-    //         Z::size2(scene->size.width / 2, scene->size.height * .8)
-    // );
-    // menu->zPosition = 3;
-    // menu->position = Z::pos2(scene->size.width / 2 - menu->size.width / 2,
-    //                              scene->size.height / 2 - menu->size.height / 2);
+    toMenuLabel = std::make_shared<Z::TextNode>();
+    toMenuLabel->position = Z::pos2(10, scene->size.height - 30);
+    toMenuLabel->zPosition = 3;
+    toMenuLabel->fontSize = 20;
+    toMenuLabel->name = "to menu label";
+    toMenuLabel->text = "Press <SPACE> to start, or 'm' to go to menu";
 
-    // menu->hide();
+    scene->addChild(toMenuLabel.get());
 
     menu = std::make_shared<Menu>(
-            "Menu",
+            "Breakout: Z Edition",
             Z::size2(scene->size.width, scene->size.height)
     );
     menu->zPosition = 3;
+    menu->name = "menu";
 
     Z::TextNode* startLabel = new Z::TextNode;
     startLabel->text = "Start";
@@ -249,8 +250,8 @@ Z::SceneNode* Breakout::init() {
     worthlessLabel3->fontSize = 30;
     menu->addOption(worthlessLabel3);
 
-    menu->hide();
-    scene->addChild(menu.get());
+    // menu->hide();
+    // scene->addChild(menu.get());
 
     loadLevel(0, scene);
 
@@ -350,6 +351,7 @@ void Breakout::keyDown(Z::KeyDownEvent event) {
         }
         case Z::KeyInput::SPACE: {
             if (STUCK) {
+                scene->removeChild("to menu label");
                 STUCK = false;
                 ball->velocity = currentLevel->initialBallVelocity;
             }
@@ -359,11 +361,14 @@ void Breakout::keyDown(Z::KeyDownEvent event) {
         case Z::KeyInput::M: {
             menu->keyDown(event);
             if (state == GameState::ACTIVE) {
+                scene->addChild(menu.get());
+                scene->removeChild("to menu label");
                 state = GameState::MENU;
                 menu->show();
                 TIME_SCALE = 0.0;
             }
             else {
+                scene->removeChild("menu");
                 state = GameState::ACTIVE;
                 menu->hide();
                 TIME_SCALE = 1.0;
