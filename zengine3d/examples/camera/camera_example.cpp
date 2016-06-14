@@ -155,7 +155,7 @@ int main() {
         unsigned char* image;
         {
             int width, height;
-            image = SOIL_load_image("./container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
+            image = SOIL_load_image("../../assets/textures/container.jpg", &width, &height, 0, SOIL_LOAD_RGB);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
             glGenerateMipmap(GL_TEXTURE_2D);
             SOIL_free_image_data(image);
@@ -175,7 +175,7 @@ int main() {
         unsigned char* image;
         {
             int width, height;
-            image = SOIL_load_image("./awesomeface.png", &width, &height, 0, SOIL_LOAD_RGB);
+            image = SOIL_load_image("../../assets/textures/awesomeface.png", &width, &height, 0, SOIL_LOAD_RGB);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
             glGenerateMipmap(GL_TEXTURE_2D);
             SOIL_free_image_data(image);

@@ -2,13 +2,12 @@ CC = clang++
 
 CC_FLAGS = -w -std=c++14 -ferror-limit=1
 
-#INCLUDE_PATHS = -I../zengine/ -I../zengine/src/include/ -I../zengine/src
-INCLUDE_PATHS = -I../include
+INCLUDE_PATHS = -I../../include -I../../vendor
 
-LIBRARY_PATHS = -L/usr/local/lib -L../lib
+LIBRARY_PATHS = -L/usr/local/lib
 
-LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL
-EXEC = camera_example.bin
+LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL -lassimp
+EXEC = stencil_testing.bin
 
 SOURCES = $(wildcard *.cpp)
 
