@@ -37,6 +37,7 @@ class Mesh {
              std::vector<GLuint> indices,
              std::vector<Texture> textures);
 
+        // void updateAnimation(float timeInSeconds);
         void Draw(Shader shader);
 
     private:

@@ -1,20 +1,41 @@
 #include "model.h"
 #include <SOIL.h>
 
+#include <cassert>
+
 GLint TextureFromFile(const char* path, std::string directory);
+glm::mat4 toGLM(aiMatrix4x4 mat);
 
 Model::Model(GLchar* path) {
-   this->loadModel(path); 
+   this->loadModel(path);
+}
+
+void Model::updateAnimation(timeInSeconds) {
+
 }
 
 void Model::Draw(Shader shader) {
+
     for (int i = 0; i < this->meshes.size(); i++) {
-       this->meshes[i].Draw(shader); 
+       this->meshes[i].Draw(shader);
     }
 }
 
+aiNodeAnim* findAnimationChannel(const aiScene* scene, const aiNode* node) {
+    //for now lets assume there is one animation only
+    const aiAnimation* animation = scene->mAnimations[0];
+    for (int i = 0; i < animation->mNumChannels; i++) {
+       const aiNodeAnim* nodeAnimation = animation->channels[i]; 
+       if (std::string(nodeAnimation->mNodeName.data) == std::string(node->mName.data)) {
+           return nodeAnimation;
+       }
+    }
+    throw std::runtime_error("No animation channel for mesh");
+    return NULL;
+}
+
 void Model::loadModel(std::string path) {
-    Assimp::Importer import; 
+    Assimp::Importer import;
     const aiScene* scene = import.ReadFile(path,
                                            aiProcess_Triangulate
                                            | aiProcess_FlipUVs
@@ -25,15 +46,73 @@ void Model::loadModel(std::string path) {
         return;
     }
     this->directory = path.substr(0, path.find_last_of('/'));
-    this->processNode(scene->mRootNode, scene);
+    this->initializeNode(scene->mRootNode, scene);
 }
 
-void Model::processNode(aiNode* node, const aiScene* scene) {
+void Model::generatePositionKeyFrames(aiNodeAnim* animation, Node* node) {
+    for (int i = 0; i < nodeAnim->mNumPositionKeys; i++) {
+        double time = nodeAnim->mPositionKeys[i].mTime;
+        aiVector3D vec = nodeAnim->mPositionKeys[i].mValue;
+
+        PositionKey key;
+        key.time = time;
+        key.transformation = glm::mat4(vec.x, vec.y, vec.z);
+
+        node->positionKeys.push_back(key);
+    }
+}
+
+void Model::generateRotationKeyFrames(aiNodeAnim* animation, Node* node) {
+    for (int i = 0; i < nodeAnim->mNumRotationKeys; i++) {
+        double time = nodeAnim->mRotationKeys[i].mTime;
+        aiVector3D vec = nodeAnim->mRotationKeys[i].mValue;
+
+        RotationKey key;
+        key.time = time;
+        key.transformation = glm::mat4(vec.x, vec.y, vec.z);
+
+        node->rotationKeys.push_back(key);
+    }
+}
+
+void Model::generateScalingKeyFrames(aiNodeAnim* animation, Node* node) {
+    for (int i = 0; i < nodeAnim->mNumScalingKeys; i++) {
+        double time = nodeAnim->mScalingKeys[i].mTime;
+        aiVector3D vec = nodeAnim->mScalingKeys[i].mValue;
+
+        ScalingKey key;
+        key.time = time;
+        key.transformation = glm::mat4(vec.x, vec.y, vec.z);
+
+        node->scalingKeys.push_back(key);
+    }
+}
+
+void Model::generateKeyFrames(aiNodeAnim* animation, Node* node) {
+    generatePositionKeyFrames(animation, Node*);
+    generateRotationKeyFrames(animation, Node*);
+    generateScalingKeyFrames(animation, Node*);
+}
+
+void generateMeshes(aiScene* scene, Node* node) {
     for (int i = 0; i < node->mNumMeshes; i++) {
         aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
-        this->meshes.push_back(this->processMesh(mesh, scene));
+        node->meshes.push_back(generateMesh(mesh, scene))
     }
-    for (int i = 0; i < node->mNumChildren; i++) {
+}
+
+void Model::generateNode(aiNode* ai_node, const aiScene* scene) {
+    std::cout << "node->mName.C_Str(): " << node->mName.C_Str() << std::endl;
+
+    Node* node = new Node;
+    if (rootNode == nullptr) rootNode = node;
+    node->name = std::string(ai_node->mName.data);
+
+    aiNodeAnim* nodeAnim = findAnimationChannel(scene, ai_node);
+    generateKeyFrames(nodeAnim, node);
+    generateMeshes(scene, node);
+
+    for (int i = 0; i < ai_node->mNumChildren; i++) {
         this->processNode(node->mChildren[i], scene);
     }
 }
@@ -88,6 +167,31 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene) {
                                          "texture_specular");
         textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
     }
+
+    for (GLuint i = 0; i < mesh->mNumBones; i++) {
+
+        aiBone* bone = mesh->mBones[i];
+        for (GLuint j = 0; j < bone->mNumWeights; j++) {
+
+            float weight = bone->mWeights[i].mWeight;
+            // std::cout << "bone weight: " << bone->mWeights[i].mWeight << std::endl;
+
+            int vertexID = bone->mWeights[i].mVertexId;
+
+            assert(vertexID < mesh->mNumVertices);
+
+            vertices[vertexID].boneIDs.push_back(i);
+            vertices[vertexID].boneWeights.push_back(weight);
+        }
+
+        std::string name(mesh->mBones[i]->mName.data);
+        std::cout << "bone name: " << name << std::endl;
+
+        Bone b;
+        aiMatrix4x4 oM = mesh->mBones[i]->mOffsetMatrix;
+        b.boneSpaceTransform = toGLM(oM);
+        bones.push_back(b);
+
     return Mesh(vertices, indices, textures);
 }
 
@@ -113,8 +217,16 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial* mat,
            texture.path = str;
            textures.push_back(texture);
         }
-    }   
+    }
     return textures;
+}
+
+glm::mat4 toGLM(aiMatrix4x4 mat) {
+    return glm::mat4(
+            mat[0][1], mat[0][2], mat[0][3], mat[0][4],
+            mat[1][1], mat[1][2], mat[1][3], mat[1][4],
+            mat[2][1], mat[2][2], mat[2][3], mat[2][4],
+            mat[3][1], mat[3][2], mat[3][3], mat[3][4]);
 }
 
 GLint TextureFromFile(const char* path, std::string directory) {
@@ -123,6 +235,7 @@ GLint TextureFromFile(const char* path, std::string directory) {
     GLuint textureID;
     glGenTextures(1, &textureID);
     int width, height;
+    std::cout << "load file: " << filename << std::endl;
     unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
     glBindTexture(GL_TEXTURE_2D, textureID);
     glTexImage2D(GL_TEXTURE_2D,

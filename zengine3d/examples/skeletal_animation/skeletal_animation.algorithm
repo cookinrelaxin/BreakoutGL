@@ -1,0 +1,44 @@
+The goal is to be able to load and render an animated 3d model in real time.
+
+struct Model:
+    Node rootNode
+    Mesh meshes
+
+struct Node:
+    Node[] children
+    Keyframe[] scalingKeyframes
+    Keyframe[] translationKeyframes
+    Keyframe[] rotationKeyframes
+    Matrix4 transformationMatrix
+
+algorithm initializeModel(Model model):
+    do stuff...
+
+algorithm animateModel(Model model):
+    RecursiveUpdate(model.rootNode, getCurrentTime())
+    RenderModel(model)
+
+algorithm RecursiveUpdate(Node node, Time time):
+    Matrix4 scalingMatrix
+    Matrix4 translationMatrix
+    Matrix4 rotationMatrix
+
+    scalingMatrix     <- CalculateInterpolatedScaling(time, node.scalingKeyframes)
+    translationMatrix <- CalculateInterpolatedTranslation(time, node.translationKeyframes)
+    rotationMatrix    <- CalculateInterpolatedRotation(time, node.rotationKeyframes)
+
+    node.transformationMatrix <- rotationMatrix * translationMatrix * scalingMatrix
+
+    for childNode in node.children:
+        RecursiveUpdate(childNode)
+
+algorithm RenderModel(Model model):
+    for mesh in model.meshes:
+        for vertex in mesh.vertices:
+            Matrix4 boneTransform <- makeIdentityMatrix()
+
+            for (boneWeight, boneID) in vertex.bones:
+                Node bone <- mesh.bones[boneID]
+                boneTransform += bone.transformationMatrix * boneWeight
+
+            renderVertex(vertex)
