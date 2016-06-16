@@ -12,15 +12,18 @@
 
 Mesh::Mesh(std::vector<Vertex> vertices,
            std::vector<GLuint> indices,
+           std::vector<Bone> bones,
            std::vector<Texture> textures)
     : vertices(vertices)
     , indices(indices)
+    , bones(bones)
     , textures(textures) {
         this->setupMesh();
 }
 
 void Mesh::setupMesh() {
     glGenVertexArrays(1, &this->VAO);
+
     glGenBuffers(1, &this->VBO);
     glGenBuffers(1, &this->EBO);
 
@@ -62,14 +65,55 @@ void Mesh::setupMesh() {
                           sizeof(Vertex),
                           (GLvoid*)offsetof(Vertex, TexCoords));
 
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(3,
+                          4,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(Vertex),
+                          (GLvoid*)offsetof(Vertex, boneIDs));
+
+    glEnableVertexAttribArray(4);
+    glVertexAttribPointer(4,
+                          4,
+                          GL_FLOAT,
+                          GL_FALSE,
+                          sizeof(Vertex),
+                          (GLvoid*)offsetof(Vertex, boneWeights));
+
+
     glBindVertexArray(0);
 }
 
+void Vertex::addBoneData(GLuint boneID, float boneWeight) {
+    for (int i = 0; i < 4; i++) {
+       if (this->boneWeights[i] == 0) {
+           this->boneIDs[i] = boneID;
+           this->boneWeights[i] = boneWeight;
+           return;
+       }
+    }
+    throw std::runtime_error("too many bones per vertex");
+}
+
 void Mesh::Draw(Shader shader) {
+    for (int i = 0; i < MAX_BONES; i++) {
+         std::stringstream name;
+         name
+             << "boneTransforms["
+             << i
+             << "]"
+             ;
+         glUniformMatrix4fv(
+                 getGetUniformLocation(shader.Program, name.str()),
+                 1,
+                 GL_FALSE,
+                 glm::value_ptr(bone->animationTransform));       
+    }
+
     GLuint diffuseNr  = 1;
     GLuint specularNr = 1;
-    GLuint i;
-    for (i = 0; i < this->textures.size(); i++) {
+    for (GLuint i = 0; i < this->textures.size(); i++) {
         glActiveTexture(GL_TEXTURE0 + i);
         std::stringstream ss;
         std::string number;

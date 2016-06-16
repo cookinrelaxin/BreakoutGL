@@ -3,42 +3,52 @@ The goal is to be able to load and render an animated 3d model in real time.
 struct Model:
     Node rootNode
     Mesh meshes
+    Matrix4 modelSpaceTransform (from bone/node space to model space)
 
 struct Node:
     Node[] children
     Keyframe[] scalingKeyframes
     Keyframe[] translationKeyframes
     Keyframe[] rotationKeyframes
-    Matrix4 transformationMatrix
+    Matrix4 boneSpaceTransform (from model space to bone/node space)
+    Matrix4 animationTransform (in model space)
 
-algorithm initializeModel(Model model):
-    do stuff...
+struct Keyframe:
+    Time timeInSeconds
 
 algorithm animateModel(Model model):
-    RecursiveUpdate(model.rootNode, getCurrentTime())
-    RenderModel(model)
+    while True:
+        UpdateModel(model, getCurrentTime())
+        RenderModel(model)
 
-algorithm RecursiveUpdate(Node node, Time time):
-    Matrix4 scalingMatrix
-    Matrix4 translationMatrix
-    Matrix4 rotationMatrix
+algorithm UpdateModel(Model model, Time time):
+    RecursiveUpdate(model.rootNode, time, MakeIdentityMatrix())
 
-    scalingMatrix     <- CalculateInterpolatedScaling(time, node.scalingKeyframes)
-    translationMatrix <- CalculateInterpolatedTranslation(time, node.translationKeyframes)
-    rotationMatrix    <- CalculateInterpolatedRotation(time, node.rotationKeyframes)
+algorithm RecursiveUpdate(Node node, Time time, Matrix4 parentTransform):
+    Matrix4 scaling
+    Matrix4 translation
+    Matrix4 rotation
+    Matrix4 localTransform
 
-    node.transformationMatrix <- rotationMatrix * translationMatrix * scalingMatrix
+    scaling     <- CalculateInterpolatedScaling(time, node.scalingKeyframes)
+    translation <- CalculateInterpolatedTranslation(time, node.translationKeyframes)
+    rotation    <- CalculateInterpolatedRotation(time, node.rotationKeyframes)
+
+    localTransform <- parentTransform * rotation * translation * scaling
+    node.animationTransform <- model.modelSpaceTransform * localTransform * node.boneSpaceTransform
 
     for childNode in node.children:
-        RecursiveUpdate(childNode)
+        RecursiveUpdate(childNode, time, localTransform)
 
-algorithm RenderModel(Model model):
-    for mesh in model.meshes:
-        for vertex in mesh.vertices:
-            Matrix4 boneTransform <- makeIdentityMatrix()
+Explanation
+localTransformation <- parentTransform * rotation * translation * scaling (passed onto child nodes as their parentTransform)
+node.animationTransform <- model.modelSpaceTransform * localTransformation * node.boneSpaceTransform
 
-            for (boneWeight, boneID) in vertex.bones:
-                Node bone <- mesh.bones[boneID]
-                boneTransform += bone.transformationMatrix * boneWeight
+so really the final transformation is
+finalTransformation <- model.modelSpaceTransform * parentTransform * rotation * translation * scaling * node.boneSpaceTransform
 
-            renderVertex(vertex)
+So: 
+1. node.boneSpaceTransform moves a vertex from model space to a specific bone's coordinate system
+2. the rotation * translation * scaling (in that order) transform the vertex according to the animation at that time
+3. the parentTransform applies the transformations of a bone's parent (and its parents, and so on)
+4. model.modelSpaceTransform moves the vertex back into model space

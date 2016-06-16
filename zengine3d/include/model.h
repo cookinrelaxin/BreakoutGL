@@ -1,73 +1,140 @@
 #ifndef MODEL_H
-#define MODEL_H
+#define	MODEL_H
 
-#include "Shader.h"
-#include "mesh.h"
-
+#include <map>
 #include <vector>
-#include <string>
-#include <chrono>
+
+#include <GL/glew.h>
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
-struct Node {
-    std::string name;
-    std::vector<Mesh> meshes;
-    std::vector<Node*> children;
-    std::vector<PositionKey> positionKeys;
-    std::vector<RotationKey> rotationKeys;
-    std::vector<ScalingKey> scalingKeys;
-}
+#include <glm/glm.hpp>
+#include <glm/ext.hpp>
 
-struct PositionKey {
-    std::chrono::seconds time;
-    glm::mat4 transformation;
-}
+#include <shader.h>
 
-struct RotationKey {
-    std::chrono::seconds time;
-    glm::mat4 transformation;
-}
-
-struct ScalingKey {
-    std::chrono::seconds time;
-    glm::mat4 transformation;
-}
-
-class Model {
-    public:
-        Model(GLchar* path);
-
-        void Draw(Shader shader);
-
-    private:
-        /* data */
-        // std::vector<Mesh> meshes;
-        std::string directory;
-        std::vector<Texture> textures_loaded;
-        Node* rootNode;
-
-        void loadModel(std::string path);
-        void generateNode(aiNode* node,
-                            const aiScene* scene);
-        Mesh genertateMesh(aiMesh* mesh,
-                           const aiScene* scene);
-        std::vector<Texture> loadMaterialTextures(aiMaterial* mat,
-                                                  aiTextureType type,
-                                                  std::string typeName);
-        void updateAnimation(float timeInSeconds);
-        void findAnimationChannel(const aiScene* scene, const aiNode* node);
-
-        void generateKeyFrames(aiNodeAnim* animation, Node* node);
-        void generatePositionKeyFrames(aiNodeAnim* animation, Node* node);
-        void generateRotationKeyFrames(aiNodeAnim* animation, Node* node);
-        void generateScalingKeyFrames(aiNodeAnim* animation, Node* node);
-
-        void generateMeshes(aiScene* scene, Node* node);
-    protected:
-        /* inherited data */
+struct Texture {
+    GLuint id;
+    std::string type;
+    aiString path;
 };
 
-#endif /* end of include guard: MODEL_H */
+class SkinnedMesh {
+    public:
+        SkinnedMesh();
+
+        bool LoadMesh(const std::string& Filename);
+
+        void Render(Shader& shader);
+	
+        uint NumBones() const {
+            return m_NumBones;
+        }
+    
+        void BoneTransform(float TimeInSeconds, std::vector<glm::mat4>& Transforms);
+    
+    private:
+        #define NUM_BONES_PER_VERTEX 4
+
+        struct BoneInfo {
+            glm::mat4 BoneOffset;
+            glm::mat4 FinalTransformation;        
+
+            BoneInfo() {
+                // BoneOffset.SetZero();
+                // FinalTransformation.SetZero();            
+            }
+        };
+    
+        struct VertexBoneData {        
+            uint IDs[NUM_BONES_PER_VERTEX];
+            float Weights[NUM_BONES_PER_VERTEX];
+
+            // VertexBoneData() {
+            //     Reset();
+            // };
+            // 
+            // void Reset()
+            // {
+            //     ZERO_MEM(IDs);
+            //     ZERO_MEM(Weights);        
+            // }
+            
+            void AddBoneData(uint BoneID, float Weight);
+        };
+
+
+    void CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim);
+    void CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim);
+    void CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim);    
+    uint FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    uint FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    uint FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim);
+    const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation, const std::string NodeName);
+    void ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform);
+    bool InitFromScene(const aiScene* pScene, const std::string& Filename);
+    void InitMesh(uint MeshIndex,
+                  const aiMesh* paiMesh,
+                  std::vector<glm::vec3>& Positions,
+                  std::vector<glm::vec3>& Normals,
+                  std::vector<glm::vec2>& TexCoords,
+                  std::vector<VertexBoneData>& Bones,
+                  std::vector<unsigned int>& Indices);
+    void LoadBones(uint MeshIndex, const aiMesh* paiMesh, std::vector<VertexBoneData>& Bones);
+    bool InitMaterials(const aiScene* pScene, const std::string& Filename);
+    std::vector<Texture> loadMaterialTextures(const aiMaterial* mat,
+                                              aiTextureType type,
+                                              std::string typeName);
+
+    void Clear();
+
+#define INVALID_MATERIAL 0xFFFFFFFF
+  
+enum VB_TYPES {
+    INDEX_BUFFER,
+    POS_VB,
+    NORMAL_VB,
+    TEXCOORD_VB,
+    BONE_VB,
+    NUM_VBs            
+};
+
+    GLuint m_VAO;
+    GLuint m_Buffers[NUM_VBs];
+
+    struct MeshEntry {
+        MeshEntry() {
+            NumIndices    = 0;
+            BaseVertex    = 0;
+            BaseIndex     = 0;
+            MaterialIndex = INVALID_MATERIAL;
+        }
+        
+        unsigned int NumIndices;
+        unsigned int BaseVertex;
+        unsigned int BaseIndex;
+        unsigned int MaterialIndex;
+    };
+
+
+    std::string directory;
+    
+    std::vector<MeshEntry> m_Entries;
+    std::vector<Texture> m_Textures;
+    std::vector<Texture> loaded_textures;
+     
+    std::map<std::string,uint> m_BoneMapping; // maps a bone name to its index
+    uint m_NumBones;
+    std::vector<BoneInfo> m_BoneInfo;
+    glm::mat4 m_GlobalInverseTransform;
+    
+    const aiScene* m_pScene;
+    Assimp::Importer m_Importer;
+};
+
+
+#endif	/* OGLDEV_SKINNED_MESH_H */
+
+

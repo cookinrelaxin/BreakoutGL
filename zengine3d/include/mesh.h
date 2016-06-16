@@ -16,8 +16,10 @@ struct Vertex {
     glm::vec3 Position;
     glm::vec3 Normal;
     glm::vec2 TexCoords;
-    std::vector<GLuint> boneIDs;
-    std::vector<float> boneWeights;
+    glm::vec4 boneIDs;
+    glm::vec4 boneWeights;
+
+    void addBoneData(GLuint boneID, float boneWeight);
 } /* optional variable list */;
 
 struct Texture {
@@ -29,12 +31,16 @@ struct Texture {
 
 class Mesh {
     public:
+        const GLuint MAX_BONES = 100;
         std::vector<Vertex>  vertices;
         std::vector<GLuint>  indices;
         std::vector<Texture> textures;
+        std::vector<Bone> bones;
+        Bone* rootBone;
 
         Mesh(std::vector<Vertex> vertices,
              std::vector<GLuint> indices,
+             std::vector<Bone> bones,
              std::vector<Texture> textures);
 
         // void updateAnimation(float timeInSeconds);

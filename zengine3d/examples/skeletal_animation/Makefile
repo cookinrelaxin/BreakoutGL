@@ -9,7 +9,7 @@ LIBRARY_PATHS = -L/usr/local/lib
 LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL -lassimp
 EXEC = skeletal_animation.bin
 
-SOURCES = $(wildcard *.cpp) ../../src/mesh.cpp ../../src/model.cpp
+SOURCES = $(wildcard *.cpp) ../../src/model.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 

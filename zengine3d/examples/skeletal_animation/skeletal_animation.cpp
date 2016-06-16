@@ -58,7 +58,9 @@ int main() {
     {
         glewExperimental = GL_TRUE;
         glewInit();
+        glGetError();
     }
+    assert(glGetError() == GL_NO_ERROR);
 
     {
         int pixelWidth, pixelHeight;
@@ -66,11 +68,16 @@ int main() {
         glViewport(0,0,pixelWidth, pixelHeight);
         glEnable(GL_DEPTH_TEST);
     }
+    assert(glGetError() == GL_NO_ERROR);
 
     Shader ourShader("./skeletal_animation.vs", "./skeletal_animation.fs");
+    assert(glGetError() == GL_NO_ERROR);
 
     // Model ourModel("../../assets/models/nanosuit/nanosuit.obj");
-    Model ourModel("../../assets/models/boblampclean/boblampclean.md5mesh");
+    SkinnedMesh mesh;
+    assert(glGetError() == GL_NO_ERROR);
+    mesh.LoadMesh("../../assets/models/boblampclean/boblampclean.md5mesh");
+    assert(glGetError() == GL_NO_ERROR);
 
     while (!glfwWindowShouldClose(window)) {
         GLfloat currentFrame = glfwGetTime();
@@ -96,7 +103,22 @@ int main() {
         model = glm::rotate(model, -90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
         glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        ourModel.Draw(ourShader);
+
+        std::vector<glm::mat4> Transforms;
+
+        mesh.BoneTransform(currentFrame, Transforms);
+        
+        for (uint i = 0 ; i < Transforms.size() ; i++) {
+            std::stringstream ss;
+            ss
+                << "bones["
+                << i
+                << "]"
+                ;
+            glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, ss.str().c_str()), 1, GL_FALSE, glm::value_ptr(Transforms[i]));       
+        }
+        
+        mesh.Render(ourShader);
 
         glfwSwapBuffers(window);
     }
