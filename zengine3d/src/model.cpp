@@ -10,23 +10,22 @@
 
 GLint TextureFromFile(const char* path, std::string directory);
 
-void SkinnedMesh::VertexBoneData::AddBoneData(uint BoneID, float Weight)
+void Model::VertexBoneData::AddBoneData(uint BoneID, float Weight)
 {
     for (uint i = 0 ; i < NUM_BONES_PER_VERTEX; i++) {
         if (Weights[i] == 0.0) {
             IDs[i]     = BoneID;
             Weights[i] = Weight;
             return;
-        }        
+        }
     }
 
     // should never get here - more bones than we have space for
     throw std::runtime_error("too many bones");
 }
 
-SkinnedMesh::SkinnedMesh() {
+Model::Model() {
     m_VAO = 0;
-    // ZERO_MEM(m_Buffers);
     m_NumBones = 0;
     m_pScene = NULL;
 }
@@ -49,22 +48,22 @@ glm::quat aiToGlm(const aiQuaternion& v) {
     return glm::quat(v.w, v.x, v.y, v.z);
 }
 
-bool SkinnedMesh::LoadMesh(const std::string& Filename) {
+bool Model::LoadMesh(const std::string& Filename) {
     assert(glGetError() == GL_NO_ERROR);
 
     // Create the VAO
-    glGenVertexArrays(1, &m_VAO);   
+    glGenVertexArrays(1, &m_VAO);
     glBindVertexArray(m_VAO);
 
     // Create the buffers for the vertices attributes
     glGenBuffers(NUM_VBs, m_Buffers);
     assert(glGetError() == GL_NO_ERROR);
 
-    bool Ret = false;    
+    bool Ret = false;
 
     m_pScene = m_Importer.ReadFile(Filename.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 
-    if (m_pScene) {  
+    if (m_pScene) {
         this->directory = Filename.substr(0, Filename.find_last_of('/'));
         std::cout << "this->directory: " << this->directory << std::endl;
         m_GlobalInverseTransform = glm::inverse(aiToGlm(m_pScene->mRootNode->mTransformation));
@@ -75,14 +74,16 @@ bool SkinnedMesh::LoadMesh(const std::string& Filename) {
     }
 
     // Make sure the VAO is not changed from the outside
-    glBindVertexArray(0);	
+    glBindVertexArray(0);
 
     return Ret;
 }
 
 
-bool SkinnedMesh::InitFromScene(const aiScene* pScene, const std::string& Filename) {  
+bool Model::InitFromScene(const aiScene* pScene, const std::string& Filename) {
     m_Entries.resize(pScene->mNumMeshes);
+    std::cout << "num meshes: " << m_Entries.size() << std::endl;
+    std::cout << "num materials: " << pScene->mNumMaterials << std::endl;
     // m_Textures.resize(pScene->mNumMaterials);
 
     std::vector<glm::vec3> Positions;
@@ -96,13 +97,27 @@ bool SkinnedMesh::InitFromScene(const aiScene* pScene, const std::string& Filena
 
     // Count the number of vertices and indices
     for (uint i = 0; i < m_Entries.size(); i++) {
-        m_Entries[i].MaterialIndex = pScene->mMeshes[i]->mMaterialIndex;        
+        m_Entries[i].MaterialIndex = pScene->mMeshes[i]->mMaterialIndex;
         m_Entries[i].NumIndices    = pScene->mMeshes[i]->mNumFaces * 3;
         m_Entries[i].BaseVertex    = NumVertices;
         m_Entries[i].BaseIndex     = NumIndices;
 
         NumVertices += pScene->mMeshes[i]->mNumVertices;
         NumIndices  += m_Entries[i].NumIndices;
+    }
+
+    //map textures to meshes
+    for (int i = 0; i < m_Entries.size(); i++) {
+        // std::cout << "map textures to mesh" << std::endl;
+        const unsigned int materialIndex = m_Entries[i].MaterialIndex; 
+        const aiMaterial* material = pScene->mMaterials[i];
+        for (int j = 0; j < material->GetTextureCount(aiTextureType_DIFFUSE); j++) {
+            aiString str;
+            material->GetTexture(aiTextureType_DIFFUSE, j, &str);
+            // std::cout << "texture name: " << str.C_Str() << std::endl;
+            m_Entries[i].textures.push_back(str.C_Str());
+        }
+        //same for specular textures...
     }
 
     // Reserve space in the vectors for the vertex attributes and indices
@@ -132,7 +147,7 @@ bool SkinnedMesh::InitFromScene(const aiScene* pScene, const std::string& Filena
                  &Positions[0],
                  GL_STATIC_DRAW);
     glEnableVertexAttribArray(POSITION_LOCATION);
-    glVertexAttribPointer(POSITION_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, 0);    
+    glVertexAttribPointer(POSITION_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, 0);
     assert(glGetError() == GL_NO_ERROR);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_Buffers[TEXCOORD_VB]);
@@ -152,7 +167,7 @@ bool SkinnedMesh::InitFromScene(const aiScene* pScene, const std::string& Filena
     glEnableVertexAttribArray(BONE_ID_LOCATION);
     glVertexAttribIPointer(BONE_ID_LOCATION, 4, GL_INT, sizeof(VertexBoneData), (const GLvoid*)0);
     assert(glGetError() == GL_NO_ERROR);
-    glEnableVertexAttribArray(BONE_WEIGHT_LOCATION);    
+    glEnableVertexAttribArray(BONE_WEIGHT_LOCATION);
     glVertexAttribPointer(BONE_WEIGHT_LOCATION, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (const GLvoid*)16);
     assert(glGetError() == GL_NO_ERROR);
 
@@ -165,13 +180,13 @@ bool SkinnedMesh::InitFromScene(const aiScene* pScene, const std::string& Filena
 }
 
 
-void SkinnedMesh::InitMesh(uint MeshIndex,
+void Model::InitMesh(uint MeshIndex,
         const aiMesh* paiMesh,
         std::vector<glm::vec3>& Positions,
         std::vector<glm::vec3>& Normals,
         std::vector<glm::vec2>& TexCoords,
         std::vector<VertexBoneData>& Bones,
-        std::vector<uint>& Indices) {    
+        std::vector<uint>& Indices) {
     const aiVector3D Zero3D(0.0f, 0.0f, 0.0f);
 
     // Populate the vertex attribute vectors
@@ -182,7 +197,7 @@ void SkinnedMesh::InitMesh(uint MeshIndex,
 
         Positions.push_back(glm::vec3(pPos->x, pPos->y, pPos->z));
         Normals.push_back(glm::vec3(pNormal->x, pNormal->y, pNormal->z));
-        TexCoords.push_back(glm::vec2(pTexCoord->x, pTexCoord->y));        
+        TexCoords.push_back(glm::vec2(pTexCoord->x, pTexCoord->y));
     }
 
     LoadBones(MeshIndex, paiMesh, Bones);
@@ -198,81 +213,87 @@ void SkinnedMesh::InitMesh(uint MeshIndex,
 }
 
 
-void SkinnedMesh::LoadBones(uint MeshIndex, const aiMesh* pMesh, std::vector<VertexBoneData>& Bones) {
-    for (uint i = 0 ; i < pMesh->mNumBones ; i++) {                
-        uint BoneIndex = 0;        
+void Model::LoadBones(uint MeshIndex, const aiMesh* pMesh, std::vector<VertexBoneData>& Bones) {
+    std::cout << "num bones: " << pMesh->mNumBones << std::endl;
+    for (uint i = 0 ; i < pMesh->mNumBones ; i++) {
+        uint BoneIndex = 0;
         std::string BoneName(pMesh->mBones[i]->mName.data);
 
         if (m_BoneMapping.find(BoneName) == m_BoneMapping.end()) {
             // Allocate an index for a new bone
             BoneIndex = m_NumBones;
-            m_NumBones++;            
-            BoneInfo bi;			
+            m_NumBones++;
+            BoneInfo bi;
             m_BoneInfo.push_back(bi);
-            m_BoneInfo[BoneIndex].BoneOffset = aiToGlm(pMesh->mBones[i]->mOffsetMatrix);            
+            m_BoneInfo[BoneIndex].BoneOffset = aiToGlm(pMesh->mBones[i]->mOffsetMatrix);
             m_BoneMapping[BoneName] = BoneIndex;
         }
         else {
             BoneIndex = m_BoneMapping[BoneName];
-        }                      
+        }
 
         for (uint j = 0 ; j < pMesh->mBones[i]->mNumWeights ; j++) {
             uint VertexID = m_Entries[MeshIndex].BaseVertex + pMesh->mBones[i]->mWeights[j].mVertexId;
-            float Weight  = pMesh->mBones[i]->mWeights[j].mWeight;                   
+            float Weight  = pMesh->mBones[i]->mWeights[j].mWeight;
             Bones[VertexID].AddBoneData(BoneIndex, Weight);
         }
-    }    
+    }
 }
 
-bool SkinnedMesh::InitMaterials(const aiScene* pScene, const std::string& Filename) {
+bool Model::InitMaterials(const aiScene* pScene, const std::string& Filename) {
     // Initialize the materials
     assert(glGetError() == GL_NO_ERROR);
     for (uint i = 0 ; i < pScene->mNumMaterials ; i++) {
         const aiMaterial* pMaterial = pScene->mMaterials[i];
 
-        std::vector<Texture> diffuseMaps = this->loadMaterialTextures(
+        std::map<std::string, Texture> diffuseMaps = this->loadMaterialTextures(
                 pMaterial,
                 aiTextureType_DIFFUSE,
                 "texture_diffuse");
-        m_Textures.insert(m_Textures.end(), diffuseMaps.begin(), diffuseMaps.end());
+        m_Textures.insert(diffuseMaps.begin(), diffuseMaps.end());
 
-        std::vector<Texture> specularMaps = this->loadMaterialTextures(
+        std::map<std::string, Texture> specularMaps = this->loadMaterialTextures(
                 pMaterial,
                 aiTextureType_SPECULAR,
                 "texture_specular");
-        m_Textures.insert(m_Textures.end(), specularMaps.begin(), specularMaps.end());
+        m_Textures.insert(specularMaps.begin(), specularMaps.end());
         assert(glGetError() == GL_NO_ERROR);
     }
+    std::cout << "number of textures loaded: " << this->m_Textures.size() << std::endl;
 
     // return Ret;
     return true;
 }
 
-std::vector<Texture> SkinnedMesh::loadMaterialTextures(const aiMaterial* mat,
+std::map<std::string, Texture> Model::loadMaterialTextures(const aiMaterial* mat,
                                                        aiTextureType type,
                                                        std::string typeName) {
     assert(glGetError() == GL_NO_ERROR);
-    std::vector<Texture> textures;
+    std::map<std::string, Texture> textures;
     for (int i = 0; i < mat->GetTextureCount(type); i++) {
        aiString str;
        mat->GetTexture(type, i, &str);
+       std::cout << "texture name: " << str.C_Str() << std::endl;
 
-       GLboolean skip = false;
-       for (int j = 0; j < this->loaded_textures.size(); j++) {
-           if (this->loaded_textures[j].path == str) {
-              textures.push_back(this->loaded_textures[j]);
-              skip = true;
-              break;
-           }
-       }
+       // GLboolean skip = false;
+       // for (int j = 0; j < this->loaded_textures.size(); j++) {
+       //     if (this->loaded_textures[j].path == str) {
+       //        // textures.push_back(this->loaded_textures[j]);
+       //        textures[str.C_Str()] = 
+       //        skip = true;
+       //        break;
+       //     }
+       // }
 
-       if (!skip) {
+       // if (!skip) {
+       if (m_Textures.find(str.C_Str()) == m_Textures.end()) {
            Texture texture;
            texture.id = TextureFromFile(str.C_Str(), this->directory);
            texture.type = typeName;
            texture.path = str;
-           textures.push_back(texture);
-           this->loaded_textures.push_back(texture);
+           textures[str.C_Str()] = texture;
+           // textures.push_back(texture);
+           // this->loaded_textures.push_back(texture);
            assert(glGetError() == GL_NO_ERROR);
        }
     }
@@ -290,6 +311,8 @@ GLint TextureFromFile(const char* path, std::string directory) {
     int width, height;
     std::cout << "filename: " << filename << std::endl;
     unsigned char* image = SOIL_load_image(filename.c_str(), &width, &height, 0, SOIL_LOAD_RGB);
+    std::cout << "width: " << width << std::endl;
+    std::cout << "height: " << height << std::endl;
     assert(glGetError() == GL_NO_ERROR);
 
     glBindTexture(GL_TEXTURE_2D, textureID);
@@ -309,39 +332,50 @@ GLint TextureFromFile(const char* path, std::string directory) {
     return textureID;
 }
 
-void SkinnedMesh::Render(Shader& shader)
+void Model::Render(Shader& shader)
 {
     glBindVertexArray(m_VAO);
 
-    GLuint diffuseNr = 1;
-    GLuint specularNr = 1;
     for (uint i = 0 ; i < m_Entries.size() ; i++) {
-        std::stringstream ss;
-        std::string number;
-        std::string name = this->m_Textures[i].type;
-        if (name == "texture_diffuse")
-            ss << diffuseNr++;
-        else if (name == "texture_specular")
-            ss << specularNr++;
-        number = ss.str();
-        assert(glGetError() == GL_NO_ERROR);
+        GLuint diffuseNr = 1;
+        GLuint specularNr = 1;
+        MeshEntry entry(m_Entries[i]);
+        for (int j = 0; j < entry.textures.size(); j++) {
+            Texture texture(m_Textures[entry.textures[j]]);
+            glActiveTexture(GL_TEXTURE0+j);
+            std::stringstream ss;
+            std::string number;
+            std::string name = texture.type;
+            if (name == "texture_diffuse")
+                ss << diffuseNr++;
+            else if (name == "texture_specular")
+                ss << specularNr++;
+            number = ss.str();
+            assert(glGetError() == GL_NO_ERROR);
 
-        glUniform1i(glGetUniformLocation(shader.Program, (name+number).c_str()), i);
-        glBindTexture(GL_TEXTURE_2D, this->m_Textures[i].id);
+            glUniform1i(glGetUniformLocation(shader.Program, (name+number).c_str()), j);
+            glBindTexture(GL_TEXTURE_2D, texture.id);
+        }
 
-        glDrawElementsBaseVertex(GL_TRIANGLES, 
-                                 m_Entries[i].NumIndices, 
-                                 GL_UNSIGNED_INT, 
-                                 (void*)(sizeof(uint) * m_Entries[i].BaseIndex), 
-                                 m_Entries[i].BaseVertex);
+        glDrawElementsBaseVertex(GL_TRIANGLES,
+                                 entry.NumIndices,
+                                 GL_UNSIGNED_INT,
+                                 (void*)(sizeof(uint) * entry.BaseIndex),
+                                 entry.BaseVertex);
+
+        for (int i = 0; i < entry.textures.size(); i++) {
+            glActiveTexture(GL_TEXTURE0+i);
+            glBindTexture(GL_TEXTURE_2D, 0);
+        }
     }
 
-    // Make sure the VAO is not changed from the outside    
+
+    // Make sure the VAO is not changed from the outside
     glBindVertexArray(0);
 }
 
 
-uint SkinnedMesh::FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim) {    
+uint Model::FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim) {
     for (uint i = 0 ; i < pNodeAnim->mNumPositionKeys - 1 ; i++) {
         if (AnimationTime < (float)pNodeAnim->mPositionKeys[i + 1].mTime) {
             return i;
@@ -354,7 +388,7 @@ uint SkinnedMesh::FindPosition(float AnimationTime, const aiNodeAnim* pNodeAnim)
 }
 
 
-uint SkinnedMesh::FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim) {
+uint Model::FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim) {
     assert(pNodeAnim->mNumRotationKeys > 0);
 
     for (uint i = 0 ; i < pNodeAnim->mNumRotationKeys - 1 ; i++) {
@@ -369,7 +403,7 @@ uint SkinnedMesh::FindRotation(float AnimationTime, const aiNodeAnim* pNodeAnim)
 }
 
 
-uint SkinnedMesh::FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim) {
+uint Model::FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim) {
     assert(pNodeAnim->mNumScalingKeys > 0);
 
     for (uint i = 0 ; i < pNodeAnim->mNumScalingKeys - 1 ; i++) {
@@ -384,7 +418,7 @@ uint SkinnedMesh::FindScaling(float AnimationTime, const aiNodeAnim* pNodeAnim) 
 }
 
 
-void SkinnedMesh::CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim) {
+void Model::CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim) {
     if (pNodeAnim->mNumPositionKeys == 1) {
         Out = pNodeAnim->mPositionKeys[0].mValue;
         return;
@@ -403,7 +437,7 @@ void SkinnedMesh::CalcInterpolatedPosition(aiVector3D& Out, float AnimationTime,
 }
 
 
-void SkinnedMesh::CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim) {
+void Model::CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTime, const aiNodeAnim* pNodeAnim) {
     // we need at least two values to interpolate...
     if (pNodeAnim->mNumRotationKeys == 1) {
         Out = pNodeAnim->mRotationKeys[0].mValue;
@@ -417,13 +451,13 @@ void SkinnedMesh::CalcInterpolatedRotation(aiQuaternion& Out, float AnimationTim
     float Factor = (AnimationTime - (float)pNodeAnim->mRotationKeys[RotationIndex].mTime) / DeltaTime;
     assert(Factor >= 0.0f && Factor <= 1.0f);
     const aiQuaternion& StartRotationQ = pNodeAnim->mRotationKeys[RotationIndex].mValue;
-    const aiQuaternion& EndRotationQ   = pNodeAnim->mRotationKeys[NextRotationIndex].mValue;    
+    const aiQuaternion& EndRotationQ   = pNodeAnim->mRotationKeys[NextRotationIndex].mValue;
     aiQuaternion::Interpolate(Out, StartRotationQ, EndRotationQ, Factor);
     Out = Out.Normalize();
 }
 
 
-void SkinnedMesh::CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim) {
+void Model::CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, const aiNodeAnim* pNodeAnim) {
     if (pNodeAnim->mNumScalingKeys == 1) {
         Out = pNodeAnim->mScalingKeys[0].mValue;
         return;
@@ -442,7 +476,7 @@ void SkinnedMesh::CalcInterpolatedScaling(aiVector3D& Out, float AnimationTime, 
 }
 
 
-void SkinnedMesh::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform) {    
+void Model::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform) {
     std::string NodeName(pNode->mName.data);
 
     const aiAnimation* pAnimation = m_pScene->mAnimations[0];
@@ -461,7 +495,7 @@ void SkinnedMesh::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, co
 
         // Interpolate rotation and generate rotation transformation matrix
         aiQuaternion RotationQ;
-        CalcInterpolatedRotation(RotationQ, AnimationTime, pNodeAnim);        
+        CalcInterpolatedRotation(RotationQ, AnimationTime, pNodeAnim);
         glm::mat4 RotationM = glm::mat4_cast(aiToGlm(RotationQ));
 
         // Interpolate translation and generate translation transformation matrix
@@ -486,8 +520,7 @@ void SkinnedMesh::ReadNodeHeirarchy(float AnimationTime, const aiNode* pNode, co
     }
 }
 
-
-void SkinnedMesh::BoneTransform(float TimeInSeconds, std::vector<glm::mat4>& Transforms) {
+void Model::BoneTransform(float TimeInSeconds, std::vector<glm::mat4>& Transforms) {
     glm::mat4 Identity;
 
     float TicksPerSecond = (float)(m_pScene->mAnimations[0]->mTicksPerSecond != 0 ? m_pScene->mAnimations[0]->mTicksPerSecond : 25.0f);
@@ -504,7 +537,7 @@ void SkinnedMesh::BoneTransform(float TimeInSeconds, std::vector<glm::mat4>& Tra
 }
 
 
-const aiNodeAnim* SkinnedMesh::FindNodeAnim(const aiAnimation* pAnimation, const std::string NodeName)
+const aiNodeAnim* Model::FindNodeAnim(const aiAnimation* pAnimation, const std::string NodeName)
 {
     for (uint i = 0 ; i < pAnimation->mNumChannels ; i++) {
         const aiNodeAnim* pNodeAnim = pAnimation->mChannels[i];
@@ -516,4 +549,3 @@ const aiNodeAnim* SkinnedMesh::FindNodeAnim(const aiAnimation* pAnimation, const
 
     return NULL;
 }
-

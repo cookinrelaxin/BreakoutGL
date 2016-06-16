@@ -74,9 +74,10 @@ int main() {
     assert(glGetError() == GL_NO_ERROR);
 
     // Model ourModel("../../assets/models/nanosuit/nanosuit.obj");
-    SkinnedMesh mesh;
+    Model model;
     assert(glGetError() == GL_NO_ERROR);
-    mesh.LoadMesh("../../assets/models/boblampclean/boblampclean.md5mesh");
+    model.LoadMesh("../../assets/models/boblampclean/boblampclean.md5mesh");
+    // model.LoadMesh("../../assets/models/nanosuit/nanosuit.obj");
     assert(glGetError() == GL_NO_ERROR);
 
     while (!glfwWindowShouldClose(window)) {
@@ -92,21 +93,21 @@ int main() {
 
         ourShader.Use();
 
-        glm::mat4 projection = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
-        glm::mat4 view = camera.GetViewMatrix();
+        glm::mat4 projectionTransform = glm::perspective(camera.Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 100.0f);
+        glm::mat4 viewTransform = camera.GetViewMatrix();
 
-        glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-        glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projectionTransform));
+        glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(viewTransform));
 
-        glm::mat4 model;
-        model = glm::translate(model, glm::vec3(0.0f, -5.0f, -3.0f));
-        model = glm::rotate(model, -90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
-        model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
-        glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
+        glm::mat4 modelTransform;
+        modelTransform = glm::translate(modelTransform, glm::vec3(0.0f, -5.0f, -3.0f));
+        modelTransform = glm::rotate(modelTransform, -90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+        modelTransform = glm::scale(modelTransform, glm::vec3(0.1f, 0.1f, 0.1f));
+        glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelTransform));
 
         std::vector<glm::mat4> Transforms;
 
-        mesh.BoneTransform(currentFrame, Transforms);
+        model.BoneTransform(currentFrame, Transforms);
         
         for (uint i = 0 ; i < Transforms.size() ; i++) {
             std::stringstream ss;
@@ -118,7 +119,7 @@ int main() {
             glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, ss.str().c_str()), 1, GL_FALSE, glm::value_ptr(Transforms[i]));       
         }
         
-        mesh.Render(ourShader);
+        model.Render(ourShader);
 
         glfwSwapBuffers(window);
     }
