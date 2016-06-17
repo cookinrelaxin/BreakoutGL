@@ -13,19 +13,27 @@ enum Camera_Movement {
     RIGHT
 };
 
+enum class CameraStyle {
+    NOCLIP,
+    RTS,
+    FPS,
+};
+
 const GLfloat YAW = -90.0f;
 const GLfloat PITCH = 0.0f;
-const GLfloat SPEED = 3.0f;
+const GLfloat SPEED = 12.0f;
 const GLfloat SENSITIVITY = .25f;
 const GLfloat ZOOM = 45.0f;
 
 class Camera {
     public:
-        Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+        Camera(CameraStyle style,
+               glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
                glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
                GLfloat yaw = YAW,
                GLfloat pitch = PITCH)
             : Front(glm::vec3(0.0f, 0.0f, -1.0f))
+            , Style(style)
             , MovementSpeed(SPEED)
             , MouseSensitivity(SENSITIVITY)
             , Zoom(ZOOM)
@@ -36,7 +44,8 @@ class Camera {
                 this->updateCameraVectors();
             }
 
-        Camera(GLfloat posX,
+        Camera(CameraStyle style,
+               GLfloat posX,
                GLfloat posY,
                GLfloat posZ,
                GLfloat upX,
@@ -45,6 +54,7 @@ class Camera {
                GLfloat yaw,
                GLfloat pitch = PITCH)
             : Front(glm::vec3(0.0f, 0.0f, -1.0f))
+            , Style(style)
             , MovementSpeed(SPEED)
             , MouseSensitivity(SENSITIVITY)
             , Zoom(ZOOM)
@@ -61,11 +71,21 @@ class Camera {
 
         void ProcessKeyboard(Camera_Movement direction, GLfloat deltaTime) {
             GLfloat velocity = this->MovementSpeed * deltaTime;
-            if (direction == UP)   this->Position += this->Up * velocity;
-            if (direction == FORWARD)   this->Position += this->Front * velocity;
-            if (direction == BACKWARD)  this->Position -= this->Front * velocity;
-            if (direction == LEFT)      this->Position -= this->Right * velocity;
-            if (direction == RIGHT)     this->Position += this->Right * velocity;
+            if (Style == CameraStyle::RTS) {
+                // if (direction == UP)        this->Position += this->Up * velocity;
+                if (direction == FORWARD)   this->Position.z += velocity;
+                if (direction == BACKWARD)  this->Position.z -= velocity;
+                if (direction == LEFT)      this->Position.x += velocity;
+                if (direction == RIGHT)     this->Position.x -= velocity;
+                // if (direction == RIGHT)     this->Position += this->Right * velocity;
+            }
+            else {
+                if (direction == UP)        this->Position += this->Up * velocity;
+                if (direction == FORWARD)   this->Position += this->Front * velocity;
+                if (direction == BACKWARD)  this->Position -= this->Front * velocity;
+                if (direction == LEFT)      this->Position -= this->Right * velocity;
+                if (direction == RIGHT)     this->Position += this->Right * velocity;
+            }
         }
 
         void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true) {
@@ -84,8 +104,11 @@ class Camera {
         }
 
         void ProcessMouseScroll(GLfloat yoffset) {
-            if (this->Zoom >= 1.0f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
-            if (this->Zoom <= 1.0f) this->Zoom = 1.0f;
+            // if (this->Zoom >= 1.0f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
+            // if (this->Zoom <= 1.0f) this->Zoom = 1.0f;
+            // if (this->Zoom >= 45.0f) this->Zoom = 45.0f;
+            if (this->Zoom >= 44.5f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
+            if (this->Zoom <= 44.5f) this->Zoom = 44.5f;
             if (this->Zoom >= 45.0f) this->Zoom = 45.0f;
         }
 
@@ -101,6 +124,8 @@ class Camera {
         GLfloat MovementSpeed;
         GLfloat MouseSensitivity;
         GLfloat Zoom;
+
+        CameraStyle Style;
 
     private:
         void updateCameraVectors() {

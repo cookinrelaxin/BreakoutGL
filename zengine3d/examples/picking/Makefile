@@ -7,7 +7,7 @@ INCLUDE_PATHS = -I../../include -I../../vendor
 LIBRARY_PATHS = -L/usr/local/lib
 
 LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL -lassimp
-EXEC = model_loading.bin
+EXEC = picking.bin
 
 SOURCES = $(wildcard *.cpp) ../../src/model.cpp
 
