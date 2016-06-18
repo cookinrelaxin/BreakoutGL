@@ -108,16 +108,44 @@ bool Model::InitFromScene(const aiScene* pScene, const std::string& Filename) {
 
     //map textures to meshes
     for (int i = 0; i < m_Entries.size(); i++) {
-        // std::cout << "map textures to mesh" << std::endl;
+        std::cout << "map textures to mesh" << std::endl;
         const unsigned int materialIndex = m_Entries[i].MaterialIndex; 
-        const aiMaterial* material = pScene->mMaterials[i];
+        const aiMaterial* material = pScene->mMaterials[materialIndex];
+        std::cout << "texture count: " << material->GetTextureCount(aiTextureType_DIFFUSE) << std::endl;
         for (int j = 0; j < material->GetTextureCount(aiTextureType_DIFFUSE); j++) {
             aiString str;
             material->GetTexture(aiTextureType_DIFFUSE, j, &str);
-            // std::cout << "texture name: " << str.C_Str() << std::endl;
+            std::cout << "diffuse texture name: " << str.C_Str() << std::endl;
             m_Entries[i].textures.push_back(str.C_Str());
         }
-        //same for specular textures...
+        // same for specular textures...
+        for (int j = 0; j < material->GetTextureCount(aiTextureType_SPECULAR); j++) {
+            aiString str;
+            material->GetTexture(aiTextureType_SPECULAR, j, &str);
+            std::cout << "specular texture name: " << str.C_Str() << std::endl;
+            m_Entries[i].textures.push_back(str.C_Str());
+        }
+        aiString mn;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn))
+            throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
+        const std::string materialName(mn.data);
+        std::cout << "materialName: " << materialName << std::endl;
+
+        aiColor3D cd;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_DIFFUSE, cd))
+            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_DIFFUSE from material" + materialName);
+        const glm::vec3 materialDiffuse(glm::vec3(cd.r, cd.g, cd.b));
+        std::cout << "materialDiffuse.x: " << materialDiffuse.x << std::endl;
+        std::cout << "materialDiffuse.y: " << materialDiffuse.y << std::endl;
+        std::cout << "materialDiffuse.z: " << materialDiffuse.z << std::endl;
+
+        aiColor3D cs;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_SPECULAR, cs))
+            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_SPECULAR from material" + materialName);
+        const glm::vec3 materialSpecular(glm::vec3(cs.r, cs.g, cs.b));
+        std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
+        std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
+        std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
     }
 
     // Reserve space in the vectors for the vertex attributes and indices
@@ -214,7 +242,7 @@ void Model::InitMesh(uint MeshIndex,
 
 
 void Model::LoadBones(uint MeshIndex, const aiMesh* pMesh, std::vector<VertexBoneData>& Bones) {
-    std::cout << "num bones: " << pMesh->mNumBones << std::endl;
+    //std::cout << "num bones: " << pMesh->mNumBones << std::endl;
     for (uint i = 0 ; i < pMesh->mNumBones ; i++) {
         uint BoneIndex = 0;
         std::string BoneName(pMesh->mBones[i]->mName.data);
@@ -275,25 +303,12 @@ std::map<std::string, Texture> Model::loadMaterialTextures(const aiMaterial* mat
        mat->GetTexture(type, i, &str);
        std::cout << "texture name: " << str.C_Str() << std::endl;
 
-       // GLboolean skip = false;
-       // for (int j = 0; j < this->loaded_textures.size(); j++) {
-       //     if (this->loaded_textures[j].path == str) {
-       //        // textures.push_back(this->loaded_textures[j]);
-       //        textures[str.C_Str()] = 
-       //        skip = true;
-       //        break;
-       //     }
-       // }
-
-       // if (!skip) {
        if (m_Textures.find(str.C_Str()) == m_Textures.end()) {
            Texture texture;
            texture.id = TextureFromFile(str.C_Str(), this->directory);
            texture.type = typeName;
            texture.path = str;
            textures[str.C_Str()] = texture;
-           // textures.push_back(texture);
-           // this->loaded_textures.push_back(texture);
            assert(glGetError() == GL_NO_ERROR);
        }
     }
