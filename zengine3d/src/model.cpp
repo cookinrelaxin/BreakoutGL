@@ -125,27 +125,29 @@ bool Model::InitFromScene(const aiScene* pScene, const std::string& Filename) {
             std::cout << "specular texture name: " << str.C_Str() << std::endl;
             m_Entries[i].textures.push_back(str.C_Str());
         }
-        aiString mn;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn))
-            throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
-        const std::string materialName(mn.data);
-        std::cout << "materialName: " << materialName << std::endl;
+        // aiString mn;
+        // if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn)) {
+        //     // throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
+        //     mn = "auto name";
+        // }
+        // const std::string materialName(mn.data);
+        // std::cout << "materialName: " << materialName << std::endl;
 
-        aiColor3D cd;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_DIFFUSE, cd))
-            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_DIFFUSE from material" + materialName);
-        const glm::vec3 materialDiffuse(glm::vec3(cd.r, cd.g, cd.b));
-        std::cout << "materialDiffuse.x: " << materialDiffuse.x << std::endl;
-        std::cout << "materialDiffuse.y: " << materialDiffuse.y << std::endl;
-        std::cout << "materialDiffuse.z: " << materialDiffuse.z << std::endl;
+        // aiColor3D cd;
+        // if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_DIFFUSE, cd))
+        //     throw std::runtime_error("could not get property: AI_MATKEY_COLOR_DIFFUSE from material" + materialName);
+        // const glm::vec3 materialDiffuse(glm::vec3(cd.r, cd.g, cd.b));
+        // std::cout << "materialDiffuse.x: " << materialDiffuse.x << std::endl;
+        // std::cout << "materialDiffuse.y: " << materialDiffuse.y << std::endl;
+        // std::cout << "materialDiffuse.z: " << materialDiffuse.z << std::endl;
 
-        aiColor3D cs;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_SPECULAR, cs))
-            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_SPECULAR from material" + materialName);
-        const glm::vec3 materialSpecular(glm::vec3(cs.r, cs.g, cs.b));
-        std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
-        std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
-        std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
+        // aiColor3D cs;
+        // if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_SPECULAR, cs))
+        //     throw std::runtime_error("could not get property: AI_MATKEY_COLOR_SPECULAR from material" + materialName);
+        // const glm::vec3 materialSpecular(glm::vec3(cs.r, cs.g, cs.b));
+        // std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
+        // std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
+        // std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
     }
 
     // Reserve space in the vectors for the vertex attributes and indices
@@ -361,14 +363,18 @@ void Model::Render(Shader& shader)
             std::stringstream ss;
             std::string number;
             std::string name = texture.type;
-            if (name == "texture_diffuse")
+            if (name == "texture_diffuse") {
+                glUniform1i(glGetUniformLocation(shader.Program, "material.hasDiffuse1"), 1);
                 ss << diffuseNr++;
-            else if (name == "texture_specular")
+            }
+            else if (name == "texture_specular") {
+                glUniform1i(glGetUniformLocation(shader.Program, "material.hasSpecular1"), 1);
                 ss << specularNr++;
+            }
             number = ss.str();
             assert(glGetError() == GL_NO_ERROR);
 
-            glUniform1i(glGetUniformLocation(shader.Program, (name+number).c_str()), j);
+            glUniform1i(glGetUniformLocation(shader.Program, ("material."+name+number).c_str()), j);
             glBindTexture(GL_TEXTURE_2D, texture.id);
         }
 

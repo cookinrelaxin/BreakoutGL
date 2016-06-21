@@ -73,9 +73,9 @@ int main() {
     Model ourModel;
     assert(glGetError() == GL_NO_ERROR);
     // ourModel.LoadMesh("../../assets/models/nanosuit/nanosuit.obj");
-    // ourModel.LoadMesh("../../assets/models/sibenik/sibenik.obj");
+    ourModel.LoadMesh("../../assets/models/sibenik/sibenik.obj");
     //ourModel.LoadMesh("../../assets/models/dabrovic_sponza/sponza.obj");
-    ourModel.LoadMesh("../../assets/models/cornell_box/CornellBox-Original.obj");
+    //ourModel.LoadMesh("../../assets/models/cornell_box/CornellBox-Original.obj");
     assert(glGetError() == GL_NO_ERROR);
 
     while (!glfwWindowShouldClose(window)) {

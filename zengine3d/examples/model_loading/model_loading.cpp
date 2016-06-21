@@ -23,7 +23,7 @@ void error_callback(int errorCode, const char* description);
 void mouse_callback(GLFWwindow* window, double xPos, double yPos);
 void Do_Movement();
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(CameraStyle::NOCLIP, glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
