@@ -72,9 +72,8 @@ int main() {
     Shader lightingShader("./lighting.vs", "./lighting.fs");
     Shader lampShader("./lamp.vs", "./lamp.fs");
 
-    Model bobLamp;
     // nanosuit.LoadMesh("../../assets/models/nanosuit/nanosuit.obj");
-    bobLamp.LoadMesh("../../assets/models/boblampclean/boblampclean.md5mesh");
+    Model bobLamp("../../assets/models/boblampclean/boblampclean.md5mesh");
     GLfloat vertices[] = {
     // Positions           // Normals           // Texture Coords
         -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
@@ -203,14 +202,14 @@ int main() {
         glUniform1f(glGetUniformLocation(lightingShader.Program, "pointLights[3].quadratic"), 0.032f);
 
         glm::mat4 model;
-        model = glm::translate(model, glm::vec3(0.0f, -3.75f, 0.0f));
+        model = glm::translate(model, glm::vec3(0.0f, -3.75f, -2.0f));
         model = glm::scale(model, glm::vec3(0.1f, 0.1f, 0.1f));
         model = glm::rotate(model, -(float)M_PI/2.0f, glm::vec3(1.0f, 0.0f, 0.0f));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
         std::vector<glm::mat4> Transforms;
 
-        bobLamp.BoneTransform(currentFrame, Transforms);
+        bobLamp.boneTransform(currentFrame, Transforms);
         
         for (uint i = 0 ; i < Transforms.size() ; i++) {
             std::stringstream ss;
@@ -222,7 +221,7 @@ int main() {
             glUniformMatrix4fv(glGetUniformLocation(lightingShader.Program, ss.str().c_str()), 1, GL_FALSE, glm::value_ptr(Transforms[i]));       
         }
 
-        bobLamp.Render(lightingShader);
+        bobLamp.render(lightingShader);
 
         lampShader.Use();
         modelLoc = glGetUniformLocation(lampShader.Program, "model");

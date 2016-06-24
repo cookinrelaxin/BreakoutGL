@@ -21,7 +21,7 @@ enum class CameraStyle {
 
 const GLfloat YAW = -90.0f;
 const GLfloat PITCH = 0.0f;
-const GLfloat SPEED = 12.0f;
+const GLfloat SPEED = 1.0f;
 const GLfloat SENSITIVITY = .25f;
 const GLfloat ZOOM = 45.0f;
 

@@ -1,21 +1,16 @@
 #version 330 core
 
 struct Material {
+    vec3 baseColor;
+    float blendCoefficient;
     sampler2D diffuse;
     sampler2D specular;
-    sampler2D shininess;
+    float shininess;
 };
 
 struct Light {
     vec3 position;
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-
-    float constant;
-    float linear;
-    float quadratic;
+    vec3 color;
 };
 
 in vec3 FragPos;

@@ -1,6 +1,8 @@
 #ifndef MODEL_H
 #define MODEL_H
 
+#define NUM_BONES_PER_VERTEX 4
+
 #include <map>
 #include <vector>
 
@@ -23,81 +25,80 @@ struct Texture {
 
 class Model {
     public:
-        Model();
+        Model(const std::string& fileName)
+            : VAO(0)
+            , numBones(0)
+            , m_pScene(nullptr) {
+                loadMesh(fileName);
+            }
 
-        bool LoadMesh(const std::string& Filename);
+        void render(Shader& shader);
 
-        void Render(Shader& shader);
-
-        uint NumBones() const {
-            return m_NumBones;
-        }
-
-        void BoneTransform(float TimeInSeconds, std::vector<glm::mat4>& Transforms);
+        void boneTransform(float timeInSeconds, std::vector<glm::mat4>& transforms);
 
     private:
-        #define NUM_BONES_PER_VERTEX 4
 
         struct BoneInfo {
-            glm::mat4 BoneOffset;
-            glm::mat4 FinalTransformation;
+            glm::mat4 boneOffset;
+            glm::mat4 finalTransformation;
         };
 
         struct VertexBoneData {
             uint IDs[NUM_BONES_PER_VERTEX];
-            float Weights[NUM_BONES_PER_VERTEX];
+            float weights[NUM_BONES_PER_VERTEX];
 
-            void AddBoneData(uint BoneID, float Weight);
+            void addBoneData(uint boneID, float weight);
         };
 
+    bool loadMesh(const std::string& fileName);
 
-    void CalcInterpolatedScaling(aiVector3D& Out,
-                                 float AnimationTime,
+    void calcInterpolatedScaling(aiVector3D& out,
+                                 float animationTime,
                                  const aiNodeAnim* pNodeAnim);
 
-    void CalcInterpolatedRotation(aiQuaternion& Out,
-                                  float AnimationTime,
+    void calcInterpolatedRotation(aiQuaternion& out,
+                                  float animationTime,
                                   const aiNodeAnim* pNodeAnim);
 
-    void CalcInterpolatedPosition(aiVector3D& Out,
-                                  float AnimationTime,
+    void calcInterpolatedPosition(aiVector3D& out,
+                                  float animationTime,
                                   const aiNodeAnim* pNodeAnim);
 
-    uint FindScaling(float AnimationTime,
+    uint findScaling(float animationTime,
                      const aiNodeAnim* pNodeAnim);
-    uint FindRotation(float AnimationTime,
+    uint findRotation(float animationTime,
                       const aiNodeAnim* pNodeAnim);
-    uint FindPosition(float AnimationTime,
+    uint findPosition(float animationTime,
                       const aiNodeAnim* pNodeAnim);
 
-    const aiNodeAnim* FindNodeAnim(const aiAnimation* pAnimation,
-                                   const std::string NodeName);
+    const aiNodeAnim* findNodeAnim(const aiAnimation* pAnimation,
+                                   const std::string nodeName);
 
-    void ReadNodeHeirarchy(float AnimationTime,
+    void readNodeHierarchy(float animationTime,
                            const aiNode* pNode,
-                           const glm::mat4& ParentTransform);
+                           const glm::mat4& parentTransform);
 
-    bool InitFromScene(const aiScene* pScene,
-                       const std::string& Filename);
+    bool initFromScene(const aiScene* pScene,
+                       const std::string& fileName);
 
-    void InitMesh(uint MeshIndex,
+    void initMesh(uint meshIndex,
                   const aiMesh* paiMesh,
-                  std::vector<glm::vec3>& Positions,
-                  std::vector<glm::vec3>& Normals,
-                  std::vector<glm::vec2>& TexCoords,
-                  std::vector<VertexBoneData>& Bones,
-                  std::vector<unsigned int>& Indices);
+                  std::vector<glm::vec3>& positions,
+                  std::vector<glm::vec3>& normals,
+                  std::vector<glm::vec2>& texCoords,
+                  std::vector<VertexBoneData>& bones,
+                  std::vector<unsigned int>& indices);
 
-    void LoadBones(uint MeshIndex,
+    void loadBones(uint meshIndex,
                    const aiMesh* paiMesh,
-                   std::vector<VertexBoneData>& Bones);
+                   std::vector<VertexBoneData>& bones);
 
-    bool InitMaterials(const aiScene* pScene,
-                       const std::string& Filename);
+    bool initMaterials(const aiScene* pScene,
+                       const std::string& fileName);
 
     std::map<std::string, Texture> loadMaterialTextures(const aiMaterial* mat,
-                                              aiTextureType type,
-                                              std::string typeName);
+                                                        aiTextureType type,
+                                                        std::string typeName);
 
 #define INVALID_MATERIAL 0xFFFFFFFF
 
@@ -110,34 +111,34 @@ enum VB_TYPES {
     NUM_VBs
 };
 
-    GLuint m_VAO;
+    GLuint VAO;
     GLuint m_Buffers[NUM_VBs];
 
     struct MeshEntry {
         MeshEntry() {
-            NumIndices    = 0;
-            BaseVertex    = 0;
-            BaseIndex     = 0;
-            MaterialIndex = INVALID_MATERIAL;
+            numIndices    = 0;
+            baseVertex    = 0;
+            baseIndex     = 0;
+            materialIndex = INVALID_MATERIAL;
         }
 
-        unsigned int NumIndices;
-        unsigned int BaseVertex;
-        unsigned int BaseIndex;
-        unsigned int MaterialIndex;
+        unsigned int numIndices;
+        unsigned int baseVertex;
+        unsigned int baseIndex;
+        unsigned int materialIndex;
 
         std::vector<std::string> textures;
     };
 
     std::string directory;
 
-    std::vector<MeshEntry> m_Entries;
+    std::vector<MeshEntry> meshes;
     // std::vector<Texture> m_Textures;
     std::map<std::string, Texture> m_Textures;
     // std::vector<Texture> loaded_textures;
 
     std::map<std::string,uint> m_BoneMapping; // maps a bone name to its index
-    uint m_NumBones;
+    uint numBones;
     std::vector<BoneInfo> m_BoneInfo;
     glm::mat4 m_GlobalInverseTransform;
 
