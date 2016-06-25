@@ -30,9 +30,18 @@ class Model {
             , numBones(0)
             , m_pScene(nullptr) {
                 loadMesh(fileName);
+                glGenTextures(1, &defaultTexture);
+                glBindTexture(GL_TEXTURE_2D, defaultTexture);
+                unsigned char data[3]{255, 255, 255};
+
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 1, 1, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+                assert(glGetError() == GL_NO_ERROR);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
             }
 
         void render(Shader& shader);
+        void renderShadows(Shader& shader);
 
         void boneTransform(float timeInSeconds, std::vector<glm::mat4>& transforms);
 
@@ -120,12 +129,17 @@ enum VB_TYPES {
             baseVertex    = 0;
             baseIndex     = 0;
             materialIndex = INVALID_MATERIAL;
+            diffuseColor = glm::vec3(0.0f, 0.0f, 0.0f);
+            specularColor = glm::vec3(0.0f, 0.0f, 0.0f);
         }
 
         unsigned int numIndices;
         unsigned int baseVertex;
         unsigned int baseIndex;
         unsigned int materialIndex;
+
+        glm::vec3 diffuseColor;
+        glm::vec3 specularColor;
 
         std::vector<std::string> textures;
     };
@@ -144,6 +158,8 @@ enum VB_TYPES {
 
     const aiScene* m_pScene;
     Assimp::Importer m_Importer;
+
+    GLuint defaultTexture;
 };
 
 #endif

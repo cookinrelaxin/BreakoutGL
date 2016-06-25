@@ -52,7 +52,13 @@ bool Model::loadMesh(const std::string& fileName) {
 
         glGenBuffers(NUM_VBs, m_Buffers);
 
-        this->m_pScene = m_Importer.ReadFile(fileName.c_str(), aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+        this->m_pScene = m_Importer.ReadFile(fileName.c_str()
+                , aiProcess_Triangulate
+                | aiProcess_GenSmoothNormals
+                | aiProcess_FlipUVs
+                | aiProcess_JoinIdenticalVertices
+                | aiProcess_FixInfacingNormals
+                );
         return [&]() {
             if (m_pScene) {
                 this->directory = fileName.substr(0, fileName.find_last_of('/'));
@@ -97,46 +103,49 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
 
     //map textures to meshes
     for (int i = 0; i < meshes.size(); i++) {
-        std::cout << "map textures to mesh" << std::endl;
+        //std::cout << "map textures to mesh" << std::endl;
         const unsigned int materialIndex = meshes[i].materialIndex; 
         const aiMaterial* material = pScene->mMaterials[materialIndex];
-        std::cout << "texture count: " << material->GetTextureCount(aiTextureType_DIFFUSE) << std::endl;
+        //std::cout << "texture count: " << material->GetTextureCount(aiTextureType_DIFFUSE) << std::endl;
+
         for (int j = 0; j < material->GetTextureCount(aiTextureType_DIFFUSE); j++) {
             aiString str;
             material->GetTexture(aiTextureType_DIFFUSE, j, &str);
-            std::cout << "diffuse texture name: " << str.C_Str() << std::endl;
+            //std::cout << "diffuse texture name: " << str.C_Str() << std::endl;
             meshes[i].textures.push_back(str.C_Str());
         }
         // same for specular textures...
         for (int j = 0; j < material->GetTextureCount(aiTextureType_SPECULAR); j++) {
             aiString str;
             material->GetTexture(aiTextureType_SPECULAR, j, &str);
-            std::cout << "specular texture name: " << str.C_Str() << std::endl;
+            //std::cout << "specular texture name: " << str.C_Str() << std::endl;
             meshes[i].textures.push_back(str.C_Str());
         }
-        // aiString mn;
-        // if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn)) {
-        //     // throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
-        //     mn = "auto name";
-        // }
-        // const std::string materialName(mn.data);
-        // std::cout << "materialName: " << materialName << std::endl;
+        aiString mn;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn)) {
+            // throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
+            mn = "default name";
+        }
+        const std::string materialName(mn.data);
+        //std::cout << "materialName: " << materialName << std::endl;
 
-        // aiColor3D cd;
-        // if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_DIFFUSE, cd))
-        //     throw std::runtime_error("could not get property: AI_MATKEY_COLOR_DIFFUSE from material" + materialName);
-        // const glm::vec3 materialDiffuse(glm::vec3(cd.r, cd.g, cd.b));
-        // std::cout << "materialDiffuse.x: " << materialDiffuse.x << std::endl;
-        // std::cout << "materialDiffuse.y: " << materialDiffuse.y << std::endl;
-        // std::cout << "materialDiffuse.z: " << materialDiffuse.z << std::endl;
+        aiColor3D cd;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_DIFFUSE, cd))
+            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_DIFFUSE from material" + materialName);
+        const glm::vec3 materialDiffuse(glm::vec3(cd.r, cd.g, cd.b));
+        //std::cout << "materialDiffuse.x: " << materialDiffuse.x << std::endl;
+        //std::cout << "materialDiffuse.y: " << materialDiffuse.y << std::endl;
+        //std::cout << "materialDiffuse.z: " << materialDiffuse.z << std::endl;
+        meshes[i].diffuseColor = materialDiffuse;
 
-        // aiColor3D cs;
-        // if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_SPECULAR, cs))
-        //     throw std::runtime_error("could not get property: AI_MATKEY_COLOR_SPECULAR from material" + materialName);
-        // const glm::vec3 materialSpecular(glm::vec3(cs.r, cs.g, cs.b));
-        // std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
-        // std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
-        // std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
+        aiColor3D cs;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_SPECULAR, cs))
+            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_SPECULAR from material" + materialName);
+        const glm::vec3 materialSpecular(glm::vec3(cs.r, cs.g, cs.b));
+        //std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
+        //std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
+        //std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
+        meshes[i].specularColor = materialSpecular;
     }
 
     // Reserve space in the vectors for the vertex attributes and indices
@@ -213,6 +222,8 @@ void Model::initMesh(uint meshIndex,
         const aiVector3D* pNormal   = &(paiMesh->mNormals[i]);
         const aiVector3D* pTexCoord = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][i]) : &Zero3D;
 
+        //std::cout << "pNormal->x: " << pNormal->x << std::endl;
+
         positions.push_back(glm::vec3(pPos->x, pPos->y, pPos->z));
         normals.push_back(glm::vec3(pNormal->x, pNormal->y, pNormal->z));
         texCoords.push_back(glm::vec2(pTexCoord->x, pTexCoord->y));
@@ -264,45 +275,91 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
     for (uint i = 0 ; i < pScene->mNumMaterials ; i++) {
         const aiMaterial* pMaterial = pScene->mMaterials[i];
 
-        std::map<std::string, Texture> diffuseMaps = this->loadMaterialTextures(
-                pMaterial,
-                aiTextureType_DIFFUSE,
-                "texture_diffuse");
-        m_Textures.insert(diffuseMaps.begin(), diffuseMaps.end());
+        aiTextureType type = aiTextureType_DIFFUSE;
+        unsigned int textureCount = pMaterial->GetTextureCount(type);
+        for (unsigned int j = 0; j < textureCount; j++) {
+            aiString texPath;
+            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                Texture texture;
+                texture.id = TextureFromFile(texPath.data, this->directory);
+                texture.type = "texture_diffuse";
+                texture.path = texPath;
+                m_Textures[texPath.data] = texture;
+                std::cout << "add new diffuse texture: " << texture.path.data << std::endl;
+            }
+        }
 
-        std::map<std::string, Texture> specularMaps = this->loadMaterialTextures(
-                pMaterial,
-                aiTextureType_SPECULAR,
-                "texture_specular");
-        m_Textures.insert(specularMaps.begin(), specularMaps.end());
+        type = aiTextureType_SPECULAR;
+        textureCount = pMaterial->GetTextureCount(type);
+        for (unsigned int j = 0; j < textureCount; j++) {
+            aiString texPath;
+            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                Texture texture;
+                texture.id = TextureFromFile(texPath.data, this->directory);
+                texture.type = "texture_specular";
+                texture.path = texPath;
+                m_Textures[texPath.data] = texture;
+                std::cout << "add new diffuse specular: " << texture.path.data << std::endl;
+            }
+        }
+
+        type = aiTextureType_HEIGHT;
+        textureCount = pMaterial->GetTextureCount(type);
+        for (unsigned int j = 0; j < textureCount; j++) {
+            aiString texPath;
+            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                Texture texture;
+                texture.id = TextureFromFile(texPath.data, this->directory);
+                texture.type = "texture_height";
+                texture.path = texPath;
+                m_Textures[texPath.data] = texture;
+                std::cout << "add new height texture: " << texture.path.data << std::endl;
+            }
+        }
+
+        // for (int i = 0; i < pMaterial->GetTextureCount(type); i++) {
+        //     aiString str;
+        //     mat->GetTexture(type, i, &str);
+        //     //std::cout << "texture name: " << str.C_Str() << std::endl;
+
+        //     if (m_Textures.find(str.C_Str()) == m_Textures.end()) {
+        //         Texture texture;
+        //         texture.id = TextureFromFile(str.C_Str(), this->directory);
+        //         texture.type = typeName;
+        //         texture.path = str;
+        //         textures[str.C_Str()] = texture;
+        //     }
+        // }
+
+        //std::map<std::string, Texture> diffuseMaps = this->loadMaterialTextures(
+                //pMaterial,
+                //aiTextureType_DIFFUSE,
+                //"texture_diffuse");
+        //m_Textures.insert(diffuseMaps.begin(), diffuseMaps.end());
+
+        //std::map<std::string, Texture> specularMaps = this->loadMaterialTextures(
+                //pMaterial,
+                //aiTextureType_SPECULAR,
+                //"texture_specular");
+        //m_Textures.insert(specularMaps.begin(), specularMaps.end());
         assert(glGetError() == GL_NO_ERROR);
     }
-    std::cout << "number of textures loaded: " << this->m_Textures.size() << std::endl;
+    //std::cout << "number of textures loaded: " << this->m_Textures.size() << std::endl;
 
     // return Ret;
     return true;
-}
-
-std::map<std::string, Texture> Model::loadMaterialTextures(const aiMaterial* mat,
-                                                       aiTextureType type,
-                                                       std::string typeName) {
-    assert(glGetError() == GL_NO_ERROR);
-    std::map<std::string, Texture> textures;
-    for (int i = 0; i < mat->GetTextureCount(type); i++) {
-       aiString str;
-       mat->GetTexture(type, i, &str);
-       std::cout << "texture name: " << str.C_Str() << std::endl;
-
-       if (m_Textures.find(str.C_Str()) == m_Textures.end()) {
-           Texture texture;
-           texture.id = TextureFromFile(str.C_Str(), this->directory);
-           texture.type = typeName;
-           texture.path = str;
-           textures[str.C_Str()] = texture;
-           assert(glGetError() == GL_NO_ERROR);
-       }
-    }
-    return textures;
 }
 
 GLint TextureFromFile(const char* path, std::string directory) {
@@ -341,41 +398,61 @@ void Model::render(Shader& shader)
 {
     glBindVertexArray(VAO);
 
+    assert(glGetError() == GL_NO_ERROR);
     for (uint i = 0 ; i < meshes.size() ; i++) {
-        GLuint diffuseNr = 1;
-        GLuint specularNr = 1;
+        //bind default white diffuse texture
+        assert(glGetError() == GL_NO_ERROR);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, defaultTexture);
+        assert(glGetError() == GL_NO_ERROR);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, defaultTexture);
+
+        assert(glGetError() == GL_NO_ERROR);
         MeshEntry entry(meshes[i]);
-        for (int j = 0; j < entry.textures.size(); j++) {
+        //for (int j = 0; j < entry.textures.size(); j++) {
+        for (int j = 0; j < entry.textures.size() && j < 2; j++) {
             Texture texture(m_Textures[entry.textures[j]]);
             glActiveTexture(GL_TEXTURE0+j);
             std::stringstream ss;
-            std::string number;
             std::string name = texture.type;
-            if (name == "texture_diffuse") {
-                glUniform1i(glGetUniformLocation(shader.Program, "material.hasDiffuse1"), 1);
-                ss << diffuseNr++;
-            }
-            else if (name == "texture_specular") {
-                glUniform1i(glGetUniformLocation(shader.Program, "material.hasSpecular1"), 1);
-                ss << specularNr++;
-            }
-            number = ss.str();
             assert(glGetError() == GL_NO_ERROR);
 
-            glUniform1i(glGetUniformLocation(shader.Program, ("material."+name+number).c_str()), j);
+            glUniform1i(glGetUniformLocation(shader.Program, ("material."+name).c_str()), j);
             glBindTexture(GL_TEXTURE_2D, texture.id);
         }
+        assert(glGetError() == GL_NO_ERROR);
+        glUniform3fv(glGetUniformLocation(shader.Program, "material.diffuseColor"), 1, glm::value_ptr(entry.diffuseColor));
+        glUniform3fv(glGetUniformLocation(shader.Program, "material.specularColor"), 1, glm::value_ptr(entry.specularColor));
+        assert(glGetError() == GL_NO_ERROR);
 
         glDrawElementsBaseVertex(GL_TRIANGLES,
                                  entry.numIndices,
                                  GL_UNSIGNED_INT,
                                  (void*)(sizeof(uint) * entry.baseIndex),
                                  entry.baseVertex);
+        assert(glGetError() == GL_NO_ERROR);
 
-        for (int i = 0; i < entry.textures.size(); i++) {
+        for (int i = 0; i < entry.textures.size() && i < 2; i++) {
             glActiveTexture(GL_TEXTURE0+i);
             glBindTexture(GL_TEXTURE_2D, 0);
         }
+    }
+
+    glBindVertexArray(0);
+}
+
+void Model::renderShadows(Shader& shader)
+{
+    glBindVertexArray(VAO);
+
+    for (uint i = 0 ; i < meshes.size() ; i++) {
+        MeshEntry entry(meshes[i]);
+        glDrawElementsBaseVertex(GL_TRIANGLES,
+                                 entry.numIndices,
+                                 GL_UNSIGNED_INT,
+                                 (void*)(sizeof(uint) * entry.baseIndex),
+                                 entry.baseVertex);
     }
 
     glBindVertexArray(0);
