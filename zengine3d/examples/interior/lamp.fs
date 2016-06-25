@@ -1,6 +1,8 @@
 #version 330 core
 out vec4 color;
 
+uniform vec3 lampColor;
+
 void main() {
-    color = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+    color = vec4(lampColor, 1.0f);
 }

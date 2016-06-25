@@ -7,6 +7,8 @@
 #define NORMAL_LOCATION      2
 #define BONE_ID_LOCATION     3
 #define BONE_WEIGHT_LOCATION 4
+#define TANGENT_LOCATION     5
+#define BITANGENT_LOCATION   6
 
 glm::mat4 aiToGlm(const aiMatrix4x4& v) {
     glm::mat4 out;
@@ -55,6 +57,7 @@ bool Model::loadMesh(const std::string& fileName) {
         this->m_pScene = m_Importer.ReadFile(fileName.c_str()
                 , aiProcess_Triangulate
                 | aiProcess_GenSmoothNormals
+                | aiProcess_CalcTangentSpace
                 | aiProcess_FlipUVs
                 | aiProcess_JoinIdenticalVertices
                 | aiProcess_FixInfacingNormals
@@ -84,6 +87,8 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
+    std::vector<glm::vec3> tangents;
+    std::vector<glm::vec3> bitangents;
     std::vector<glm::vec2> texCoords;
     std::vector<VertexBoneData> bones;
     std::vector<uint> indices;
@@ -146,11 +151,21 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
         //std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
         //std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
         meshes[i].specularColor = materialSpecular;
+
+        float shininess;
+        if (AI_SUCCESS != material->Get(AI_MATKEY_SHININESS, shininess))
+            throw std::runtime_error("could not get property: AI_MATKEY_SHININESS from material" + materialName);
+        //std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
+        //std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
+        //std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
+        meshes[i].shininess = shininess;
     }
 
     // Reserve space in the vectors for the vertex attributes and indices
     positions.reserve(numVertices);
     normals.reserve(numVertices);
+    tangents.reserve(numVertices);
+    bitangents.reserve(numVertices);
     texCoords.reserve(numVertices);
     bones.resize(numVertices);
     indices.reserve(numIndices);
@@ -158,7 +173,7 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
     // Initialize the meshes in the scene one by one
     for (uint i = 0 ; i < meshes.size() ; i++) {
         const aiMesh* paiMesh = pScene->mMeshes[i];
-        initMesh(i, paiMesh, positions, normals, texCoords, bones, indices);
+        initMesh(i, paiMesh, positions, normals, tangents, bitangents, texCoords, bones, indices);
     }
     assert(glGetError() == GL_NO_ERROR);
 
@@ -198,6 +213,18 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
     glVertexAttribPointer(BONE_WEIGHT_LOCATION, 4, GL_FLOAT, GL_FALSE, sizeof(VertexBoneData), (const GLvoid*)16);
     assert(glGetError() == GL_NO_ERROR);
 
+    glBindBuffer(GL_ARRAY_BUFFER, m_Buffers[TANGENT_VB]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(tangents[0]) * tangents.size(), &tangents[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(TANGENT_LOCATION);
+    glVertexAttribPointer(TANGENT_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    assert(glGetError() == GL_NO_ERROR);
+
+    glBindBuffer(GL_ARRAY_BUFFER, m_Buffers[BITANGENT_VB]);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(bitangents[0]) * bitangents.size(), &bitangents[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(BITANGENT_LOCATION);
+    glVertexAttribPointer(BITANGENT_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    assert(glGetError() == GL_NO_ERROR);
+
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_Buffers[INDEX_BUFFER]);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[0]) * indices.size(), &indices[0], GL_STATIC_DRAW);
     assert(glGetError() == GL_NO_ERROR);
@@ -211,6 +238,8 @@ void Model::initMesh(uint meshIndex,
                      const aiMesh* paiMesh,
                      std::vector<glm::vec3>& positions,
                      std::vector<glm::vec3>& normals,
+                     std::vector<glm::vec3>& tangents,
+                     std::vector<glm::vec3>& bitangents,
                      std::vector<glm::vec2>& texCoords,
                      std::vector<VertexBoneData>& bones,
                      std::vector<uint>& indices) {
@@ -218,14 +247,18 @@ void Model::initMesh(uint meshIndex,
 
     // Populate the vertex attribute vectors
     for (uint i = 0 ; i < paiMesh->mNumVertices ; i++) {
-        const aiVector3D* pPos      = &(paiMesh->mVertices[i]);
-        const aiVector3D* pNormal   = &(paiMesh->mNormals[i]);
-        const aiVector3D* pTexCoord = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][i]) : &Zero3D;
+        const aiVector3D* pPos       = &(paiMesh->mVertices[i]);
+        const aiVector3D* pNormal    = &(paiMesh->mNormals[i]);
+        const aiVector3D* pTangent   = &(paiMesh->mTangents[i]);
+        const aiVector3D* pBitangent = &(paiMesh->mBitangents[i]);
+        const aiVector3D* pTexCoord  = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][i]) : &Zero3D;
 
         //std::cout << "pNormal->x: " << pNormal->x << std::endl;
 
         positions.push_back(glm::vec3(pPos->x, pPos->y, pPos->z));
         normals.push_back(glm::vec3(pNormal->x, pNormal->y, pNormal->z));
+        tangents.push_back(glm::vec3(pTangent->x, pTangent->y, pTangent->z));
+        bitangents.push_back(glm::vec3(pBitangent->x, pBitangent->y, pBitangent->z));
         texCoords.push_back(glm::vec2(pTexCoord->x, pTexCoord->y));
     }
 
@@ -329,6 +362,24 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
             }
         }
 
+        type = aiTextureType_NORMALS;
+        textureCount = pMaterial->GetTextureCount(type);
+        for (unsigned int j = 0; j < textureCount; j++) {
+            aiString texPath;
+            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                Texture texture;
+                texture.id = TextureFromFile(texPath.data, this->directory);
+                texture.type = "texture_normal";
+                texture.path = texPath;
+                m_Textures[texPath.data] = texture;
+                std::cout << "add new normal texture: " << texture.path.data << std::endl;
+            }
+        }
+
         // for (int i = 0; i < pMaterial->GetTextureCount(type); i++) {
         //     aiString str;
         //     mat->GetTexture(type, i, &str);
@@ -378,7 +429,7 @@ GLint TextureFromFile(const char* path, std::string directory) {
     assert(glGetError() == GL_NO_ERROR);
 
     glBindTexture(GL_TEXTURE_2D, textureID);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
     glGenerateMipmap(GL_TEXTURE_2D);
     assert(glGetError() == GL_NO_ERROR);
 
@@ -407,11 +458,15 @@ void Model::render(Shader& shader)
         assert(glGetError() == GL_NO_ERROR);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, defaultTexture);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, defaultTexture);
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, defaultTexture);
 
         assert(glGetError() == GL_NO_ERROR);
         MeshEntry entry(meshes[i]);
         //for (int j = 0; j < entry.textures.size(); j++) {
-        for (int j = 0; j < entry.textures.size() && j < 2; j++) {
+        for (int j = 0; j < entry.textures.size() && j < 4; j++) {
             Texture texture(m_Textures[entry.textures[j]]);
             glActiveTexture(GL_TEXTURE0+j);
             std::stringstream ss;
@@ -424,6 +479,7 @@ void Model::render(Shader& shader)
         assert(glGetError() == GL_NO_ERROR);
         glUniform3fv(glGetUniformLocation(shader.Program, "material.diffuseColor"), 1, glm::value_ptr(entry.diffuseColor));
         glUniform3fv(glGetUniformLocation(shader.Program, "material.specularColor"), 1, glm::value_ptr(entry.specularColor));
+        glUniform1f(glGetUniformLocation(shader.Program, "material.shininess"), entry.shininess);
         assert(glGetError() == GL_NO_ERROR);
 
         glDrawElementsBaseVertex(GL_TRIANGLES,
@@ -433,7 +489,7 @@ void Model::render(Shader& shader)
                                  entry.baseVertex);
         assert(glGetError() == GL_NO_ERROR);
 
-        for (int i = 0; i < entry.textures.size() && i < 2; i++) {
+        for (int i = 0; i < entry.textures.size() && i < 4; i++) {
             glActiveTexture(GL_TEXTURE0+i);
             glBindTexture(GL_TEXTURE_2D, 0);
         }

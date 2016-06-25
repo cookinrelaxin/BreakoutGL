@@ -94,6 +94,8 @@ class Model {
                   const aiMesh* paiMesh,
                   std::vector<glm::vec3>& positions,
                   std::vector<glm::vec3>& normals,
+                  std::vector<glm::vec3>& tangents,
+                  std::vector<glm::vec3>& bitangents,
                   std::vector<glm::vec2>& texCoords,
                   std::vector<VertexBoneData>& bones,
                   std::vector<unsigned int>& indices);
@@ -115,6 +117,8 @@ enum VB_TYPES {
     INDEX_BUFFER,
     POS_VB,
     NORMAL_VB,
+    TANGENT_VB,
+    BITANGENT_VB,
     TEXCOORD_VB,
     BONE_VB,
     NUM_VBs
@@ -131,6 +135,7 @@ enum VB_TYPES {
             materialIndex = INVALID_MATERIAL;
             diffuseColor = glm::vec3(0.0f, 0.0f, 0.0f);
             specularColor = glm::vec3(0.0f, 0.0f, 0.0f);
+            shininess = 0.0f;
         }
 
         unsigned int numIndices;
@@ -140,6 +145,8 @@ enum VB_TYPES {
 
         glm::vec3 diffuseColor;
         glm::vec3 specularColor;
+
+        float shininess;
 
         std::vector<std::string> textures;
     };

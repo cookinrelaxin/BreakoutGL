@@ -15,7 +15,7 @@
 
 #include <SOIL.h>
 
-GLuint screenWidth(800), screenHeight(600);
+GLuint screenWidth(1600), screenHeight(1200);
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void scroll_callback(GLFWwindow* window, double xOffset, double yOffset);
@@ -34,8 +34,9 @@ bool firstMouse = true;
 
 GLfloat deltaTime(0.0f);
 GLfloat lastFrame(0.0f);
-glm::vec3 lightPos = glm::vec3(0.0f, -8.0f, 0.0f);
-glm::vec3 lightColor = glm::vec3(20.0f);
+glm::vec3 lightPos = glm::vec3(5.0f, -8.0f, 0.0f);
+glm::vec3 lightColor = glm::vec3(1.0f);
+GLfloat lightIntensity = 20.0f;
 
 int main() {
 
@@ -83,6 +84,7 @@ int main() {
     //Model ourModel("../../assets/models/sibenik/sibenik.obj");
     //Model ourModel("../../assets/models/sibenik/splitedge_sibenik.obj");
     Model ourModel("../../assets/models/sibenik/nodoubles_sibenik.obj");
+    //Model ourModel("../../assets/models/sibenik/sibenik.dae");
     //Model ourModel("../../assets/models/sibenik/autosmooth_sibenik.obj");
     //Model ourModel("../../assets/models/dabrovic_sponza/sponza.obj");
     //Model ourModel("../../assets/models/cornell_box/CornellBox-Original.obj");
@@ -91,7 +93,9 @@ int main() {
     ourShader.Use();
     glUniform1i(glGetUniformLocation(ourShader.Program, "material.diffuse"), 0);
     glUniform1i(glGetUniformLocation(ourShader.Program, "material.specular"), 1);
-    glUniform1i(glGetUniformLocation(ourShader.Program, "depthMap"), 2);
+    glUniform1i(glGetUniformLocation(ourShader.Program, "material.height"), 2);
+    glUniform1i(glGetUniformLocation(ourShader.Program, "material.normal"), 3);
+    glUniform1i(glGetUniformLocation(ourShader.Program, "depthMap"), 4);
 
     const GLuint resolution(1024);
     const GLuint SHADOW_WIDTH(resolution), SHADOW_HEIGHT(resolution);
@@ -144,11 +148,11 @@ int main() {
         glfwPollEvents();
         Do_Movement();
 
-        lightPos = glm::vec3(lightPos.x + 0.05f * cosf(currentFrame), lightPos.y + 0.05f * sinf(currentFrame), lightPos.z);
+        lightPos = glm::vec3(lightPos.x + 0.2f * cosf(currentFrame), lightPos.y + 0.05f * sinf(currentFrame), lightPos.z);
 
         const GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
         const GLfloat near = 1.0f;
-        const GLfloat far = 25.0f;
+        const GLfloat far = 50.0f;
         glm::mat4 shadowProj = glm::perspective((float)M_PI/2.0f, aspect, near, far);
         std::vector<glm::mat4> shadowTransforms;
         shadowTransforms.push_back(shadowProj * glm::lookAt(lightPos, lightPos + glm::vec3( 1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)));
@@ -197,10 +201,13 @@ int main() {
         glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
         glUniform3fv(glGetUniformLocation(ourShader.Program, "light.position"), 1, glm::value_ptr(lightPos));
         glUniform3fv(glGetUniformLocation(ourShader.Program, "light.color"), 1, glm::value_ptr(lightColor));
+        glUniform1f(glGetUniformLocation(ourShader.Program, "light.intensity"), lightIntensity);
         glUniform3fv(glGetUniformLocation(ourShader.Program, "viewPos"), 1, glm::value_ptr(camera.Position));
+        glUniform3fv(glGetUniformLocation(ourShader.Program, "lightPos"), 1, glm::value_ptr(lightPos));
         glUniform1f(glGetUniformLocation(ourShader.Program, "far_plane"), far);
+        glUniform1f(glGetUniformLocation(ourShader.Program, "time"), currentFrame);
 
-        glActiveTexture(GL_TEXTURE2);
+        glActiveTexture(GL_TEXTURE4);
         glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
 
         assert(glGetError() == GL_NO_ERROR);
@@ -210,6 +217,7 @@ int main() {
 
         glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         glUniformMatrix4fv(glGetUniformLocation(lampShader.Program, "view"), 1, GL_FALSE, glm::value_ptr(view));
+        glUniform3fv(glGetUniformLocation(lampShader.Program, "lampColor"), 1, glm::value_ptr(lightColor * lightIntensity));
 
         RenderCube(lampShader);
 
@@ -348,5 +356,8 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
-   camera.ProcessMouseScroll(yoffset); 
+    lightIntensity += yoffset;
+    if (lightIntensity <= 0.0f)
+        lightIntensity = 0.0f;
+    //camera.ProcessMouseScroll(yoffset); 
 }
