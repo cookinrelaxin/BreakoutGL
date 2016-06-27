@@ -10,6 +10,11 @@
 #define TANGENT_LOCATION     5
 #define BITANGENT_LOCATION   6
 
+#define DIFFUSE_TEXTURE_LOCATION  0
+#define SPECULAR_TEXTURE_LOCATION 1
+#define HEIGHT_TEXTURE_LOCATION   2
+#define NORMAL_TEXTURE_LOCATION   3
+
 glm::mat4 aiToGlm(const aiMatrix4x4& v) {
     glm::mat4 out;
     assert(sizeof(out) == sizeof(v));
@@ -126,6 +131,16 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
             //std::cout << "specular texture name: " << str.C_Str() << std::endl;
             meshes[i].textures.push_back(str.C_Str());
         }
+        for (int j = 0; j < material->GetTextureCount(aiTextureType_NORMALS); j++) {
+            aiString str;
+            material->GetTexture(aiTextureType_NORMALS, j, &str);
+            meshes[i].textures.push_back(str.C_Str());
+        }
+        for (int j = 0; j < material->GetTextureCount(aiTextureType_HEIGHT); j++) {
+            aiString str;
+            material->GetTexture(aiTextureType_HEIGHT, j, &str);
+            meshes[i].textures.push_back(str.C_Str());
+        }
         aiString mn;
         if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn)) {
             // throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
@@ -184,10 +199,7 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
     assert(glGetError() == GL_NO_ERROR);
     // Generate and populate the buffers with vertex attributes and the indices
     glBindBuffer(GL_ARRAY_BUFFER, m_Buffers[POS_VB]);
-    glBufferData(GL_ARRAY_BUFFER,
-                 sizeof(positions[0]) * positions.size(),
-                 &positions[0],
-                 GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(positions[0]) * positions.size(), &positions[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(POSITION_LOCATION);
     glVertexAttribPointer(POSITION_LOCATION, 3, GL_FLOAT, GL_FALSE, 0, 0);
     assert(glGetError() == GL_NO_ERROR);
@@ -319,7 +331,7 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
             if (m_Textures.find(texPath.data) == m_Textures.end()) {
                 Texture texture;
                 texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "texture_diffuse";
+                texture.type = "diffuse";
                 texture.path = texPath;
                 m_Textures[texPath.data] = texture;
                 std::cout << "add new diffuse texture: " << texture.path.data << std::endl;
@@ -337,10 +349,10 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
             if (m_Textures.find(texPath.data) == m_Textures.end()) {
                 Texture texture;
                 texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "texture_specular";
+                texture.type = "specular";
                 texture.path = texPath;
                 m_Textures[texPath.data] = texture;
-                std::cout << "add new diffuse specular: " << texture.path.data << std::endl;
+                std::cout << "add new specular texture: " << texture.path.data << std::endl;
             }
         }
 
@@ -355,7 +367,7 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
             if (m_Textures.find(texPath.data) == m_Textures.end()) {
                 Texture texture;
                 texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "texture_height";
+                texture.type = "height";
                 texture.path = texPath;
                 m_Textures[texPath.data] = texture;
                 std::cout << "add new height texture: " << texture.path.data << std::endl;
@@ -373,7 +385,7 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
             if (m_Textures.find(texPath.data) == m_Textures.end()) {
                 Texture texture;
                 texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "texture_normal";
+                texture.type = "normal";
                 texture.path = texPath;
                 m_Textures[texPath.data] = texture;
                 std::cout << "add new normal texture: " << texture.path.data << std::endl;
@@ -455,7 +467,6 @@ void Model::render(Shader& shader)
         assert(glGetError() == GL_NO_ERROR);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, defaultTexture);
-        assert(glGetError() == GL_NO_ERROR);
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, defaultTexture);
         glActiveTexture(GL_TEXTURE2);
@@ -468,13 +479,33 @@ void Model::render(Shader& shader)
         //for (int j = 0; j < entry.textures.size(); j++) {
         for (int j = 0; j < entry.textures.size() && j < 4; j++) {
             Texture texture(m_Textures[entry.textures[j]]);
-            glActiveTexture(GL_TEXTURE0+j);
-            std::stringstream ss;
+            //glActiveTexture(GL_TEXTURE0+j);
             std::string name = texture.type;
-            assert(glGetError() == GL_NO_ERROR);
+            if (name == "diffuse") {
+                glActiveTexture(GL_TEXTURE0+DIFFUSE_TEXTURE_LOCATION);
+                glUniform1i(glGetUniformLocation(shader.Program, "material.diffuse"), DIFFUSE_TEXTURE_LOCATION);
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                assert(glGetError() == GL_NO_ERROR);
+            }
+            else if (name == "specular") {
+                glActiveTexture(GL_TEXTURE0+SPECULAR_TEXTURE_LOCATION);
+                glUniform1i(glGetUniformLocation(shader.Program, "material.specular"), SPECULAR_TEXTURE_LOCATION);
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                assert(glGetError() == GL_NO_ERROR);
+            }
+            else if (name == "normal") {
+                glActiveTexture(GL_TEXTURE0+NORMAL_TEXTURE_LOCATION);
+                glUniform1i(glGetUniformLocation(shader.Program, "material.normal"), NORMAL_TEXTURE_LOCATION);
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                assert(glGetError() == GL_NO_ERROR);
+            }
 
-            glUniform1i(glGetUniformLocation(shader.Program, ("material."+name).c_str()), j);
-            glBindTexture(GL_TEXTURE_2D, texture.id);
+            //glUniform1i(glGetUniformLocation(shader.Program, ("material."+name).c_str()), j);
+           
+            //std::cout << "texture.name: " << texture.path.data << std::endl;
+            //std::cout << "type: " << name << std::endl;
+            //std::cout << "material.name: " << name << std::endl;
+          
         }
         assert(glGetError() == GL_NO_ERROR);
         glUniform3fv(glGetUniformLocation(shader.Program, "material.diffuseColor"), 1, glm::value_ptr(entry.diffuseColor));
@@ -494,6 +525,7 @@ void Model::render(Shader& shader)
             glBindTexture(GL_TEXTURE_2D, 0);
         }
     }
+    //exit(0);
 
     glBindVertexArray(0);
 }

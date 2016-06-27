@@ -13,14 +13,15 @@ struct Material {
 };
 
 struct Light {
-    vec3 position;
+    /*vec3 position;*/
     vec3 color;
     float intensity;
 };
 
 in vec2 TexCoords;
 in vec3 Normal;
-in vec3 FragPos;
+/*in vec3 FragPos;*/
+
 in vec3 TangentLightPos;
 in vec3 TangentViewPos;
 in vec3 TangentFragPos;
@@ -35,36 +36,36 @@ uniform float far_plane;
 uniform samplerCube depthMap;
 uniform float time;
 
-vec2 ParallaxOcclusionMapping(vec2 texCoords, vec3 viewDir) { 
-    const float height_scale = 0.025f;
-    const float minLayers = 10;
-    const float maxLayers = 20;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0f, 0.0f, 1.0f), viewDir)));
-    float layerDepth = 1.0f / numLayers;
-    float currentLayerDepth = 0.0f;
-
-    vec2 P = viewDir.xy / viewDir.z * height_scale;
-    vec2 deltaTexCoords = P / numLayers;
-
-    vec2 currentTexCoords = texCoords;
-    float currentDepthMapValue = texture(material.height, currentTexCoords).r;
-
-    while (currentLayerDepth < currentDepthMapValue) {
-        currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = texture(material.height, currentTexCoords).r;
-        currentLayerDepth += layerDepth;
-    }
-
-    vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
-
-    float afterDepth = currentDepthMapValue - currentLayerDepth;
-    float beforeDepth = texture(material.height, prevTexCoords).r - currentLayerDepth + layerDepth;
-
-    float weight = afterDepth / (afterDepth - beforeDepth);
-    vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0f - weight);
-
-    return finalTexCoords;
-}
+// vec2 ParallaxOcclusionMapping(vec2 texCoords, vec3 viewDir) { 
+//     const float height_scale = 0.025f;
+//     const float minLayers = 10;
+//     const float maxLayers = 20;
+//     float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0f, 0.0f, 1.0f), viewDir)));
+//     float layerDepth = 1.0f / numLayers;
+//     float currentLayerDepth = 0.0f;
+// 
+//     vec2 P = viewDir.xy / viewDir.z * height_scale;
+//     vec2 deltaTexCoords = P / numLayers;
+// 
+//     vec2 currentTexCoords = texCoords;
+//     float currentDepthMapValue = texture(material.height, currentTexCoords).r;
+// 
+//     while (currentLayerDepth < currentDepthMapValue) {
+//         currentTexCoords -= deltaTexCoords;
+//         currentDepthMapValue = texture(material.height, currentTexCoords).r;
+//         currentLayerDepth += layerDepth;
+//     }
+// 
+//     vec2 prevTexCoords = currentTexCoords + deltaTexCoords;
+// 
+//     float afterDepth = currentDepthMapValue - currentLayerDepth;
+//     float beforeDepth = texture(material.height, prevTexCoords).r - currentLayerDepth + layerDepth;
+// 
+//     float weight = afterDepth / (afterDepth - beforeDepth);
+//     vec2 finalTexCoords = prevTexCoords * weight + currentTexCoords * (1.0f - weight);
+// 
+//     return finalTexCoords;
+// }
 
 float gamma = 2.2f;
 float colorDepth = mix(2.0f, 255.0f, pow(clamp(mix(-0.2f, 1.2f, abs(2.0 * fract(time / 11.0f) - 1.0f)), 0.0f, 1.0f), 2.0f));
@@ -121,43 +122,45 @@ vec3 gridSamplingDisk[20] = vec3[](
         vec3(0, 1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0, 1, -1)
 );
 
-float ShadowCalculation(vec3 fragPos) {
-    vec3 fragToLight = fragPos - light.position;
-    float currentDepth = length(fragToLight);
-
-    float shadow = 0.0f;
-    /*float bias = 0.15f;*/
-    float minBias = 0.0f;
-    float maxBias = .30f;
-    float bias = minBias + maxBias * (1.0f - clamp(dot(Normal, fragToLight), 0.0f, 1.0f));
-    const int samples = 20;
-    float viewDistance = length(viewPos - fragPos);
-    /*float diskRadius = (1.0f + (viewDistance / far_plane)) / 20.0f;*/
-    /*float diskRadius = (1.0f + currentDepth) / 100.0f;*/
-    float diskRadius = (1.0f + (1.0f - currentDepth) * 3) / textureSize(depthMap, 0).x;
-    for (int i = 0; i < samples; ++i) {
-        float closestDepth = texture(depthMap, fragToLight + gridSamplingDisk[i] * diskRadius).r;
-        closestDepth *= far_plane;
-        if (currentDepth - bias > closestDepth)
-            shadow += 1.0f;
-    }
-    shadow /= float(samples);
-
-    return shadow;
-}
+// float ShadowCalculation(vec3 fragPos) {
+//     vec3 fragToLight = fragPos - light.position;
+//     float currentDepth = length(fragToLight);
+// 
+//     float shadow = 0.0f;
+//     /*float bias = 0.15f;*/
+//     float minBias = 0.0f;
+//     float maxBias = .30f;
+//     float bias = minBias + maxBias * (1.0f - clamp(dot(Normal, fragToLight), 0.0f, 1.0f));
+//     const int samples = 20;
+//     float viewDistance = length(viewPos - fragPos);
+//     /*float diskRadius = (1.0f + (viewDistance / far_plane)) / 20.0f;*/
+//     /*float diskRadius = (1.0f + currentDepth) / 100.0f;*/
+//     float diskRadius = (1.0f + (1.0f - currentDepth) * 3) / textureSize(depthMap, 0).x;
+//     for (int i = 0; i < samples; ++i) {
+//         float closestDepth = texture(depthMap, fragToLight + gridSamplingDisk[i] * diskRadius).r;
+//         closestDepth *= far_plane;
+//         if (currentDepth - bias > closestDepth)
+//             shadow += 1.0f;
+//     }
+//     shadow /= float(samples);
+// 
+//     return shadow;
+// }
 
 void main() {
-    vec3 viewDir = normalize(viewPos - FragPos);
+    vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
 
-    vec3 norm = normalize(Normal);
+    /*vec3 norm = normalize(Normal);*/
 
-    // vec2 texCoords = ParallaxOcclusionMapping(TexCoords, viewDir);
-    // vec3 norm = texture(material.normal, texCoords).rgb;
-    // norm = normalize(norm * 2.0 - 1.0);
-    vec3 lightDir = normalize(light.position - FragPos);
+    /*vec2 texCoords = ParallaxOcclusionMapping(TexCoords, viewDir);*/
+    vec2 texCoords = TexCoords;
+    vec3 norm = texture(material.normal, texCoords).rgb;
+    norm = normalize(norm * 2.0 - 1.0);
+
+    vec3 lightDir = normalize(TangentLightPos - TangentFragPos);
 
     float diff = max(dot(norm, lightDir), 0.0f);
-    vec3 diffTex = vec3(texture(material.diffuse, TexCoords));
+    vec3 diffTex = vec3(texture(material.diffuse, texCoords));
     vec3 diffuse = material.diffuseColor * light.color * light.intensity * diff * diffTex;
     vec3 ambient = 0.0001f * light.intensity * material.diffuseColor * diffTex;
 
@@ -167,16 +170,18 @@ void main() {
     spec = pow(max(dot(norm,halfwayDir), 0.0f), material.shininess);
 
     /*vec3 specular = material.specularColor * light.color * light.intensity * spec * vec3(texture(material.specular, TexCoords));*/
-    vec3 specular = light.color * light.intensity * spec * vec3(texture(material.specular, TexCoords));
+    vec3 specular = light.color * light.intensity * spec * vec3(texture(material.specular, texCoords));
 
 
-    float distance = length(light.position - FragPos);
+    float distance = length(TangentLightPos - TangentFragPos);
     float attenuation = 1.0f / (distance * distance);
 
-    float shadow = (dot(norm, lightDir) < 0.0f) ? 0.0f : ShadowCalculation(FragPos);
+    /*float shadow = (dot(norm, lightDir) < 0.0f) ? 0.0f : ShadowCalculation(FragPos);*/
+    float shadow = 0.0f;
 
-    vec3 result = ambient + (1.0f - shadow) * (diffuse + specular) * attenuation;
+    /*vec3 result = ambient + (1.0f - shadow) * (diffuse + specular) * attenuation;*/
     /*vec3 result = specular * attenuation;*/
+    vec3 result = diffuse * attenuation;
 
     // gamma correct
     result = pow(result, vec3(1.0f/gamma));

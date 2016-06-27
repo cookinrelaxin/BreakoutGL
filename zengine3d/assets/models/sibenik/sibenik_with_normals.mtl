@@ -1,0 +1,160 @@
+# Blender MTL File: 'None'
+# Material Count: 15
+
+newmtl kamen_zid
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd kamen.png
+map_Bump kamen-bump.png
+map_Ka kamen.png
+
+newmtl kamen_zid_parapet
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd KAMEN-stup.png
+map_Ka KAMEN-stup.png
+
+newmtl kamen_zid_prozor
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd kamen.png
+map_Bump kamen-bump.png
+map_Ka kamen.png
+
+newmtl pod
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.454024 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd mramor6x6.png
+disp mramor6x6-bump.png
+map_Bump mramor6x6-normal.png
+map_Ka mramor6x6.png
+
+newmtl pod_rub
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd kamen.png
+map_Bump kamen-bump.png
+map_Ka kamen.png
+
+newmtl pod_tepih
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.349615 0.140549 0.117710
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl rozeta
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd KAMEN-stup.png
+map_Bump kamen-normal.png
+map_Ka KAMEN-stup.png
+
+newmtl sprljci
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.501961 0.501961 0.501961
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl staklo
+Ns 249.019608
+Ka 0.000000 0.000000 0.000000
+Kd 0.501961 0.501961 0.501961
+Ks 0.784314 0.784314 0.784314
+Ni 1.500000
+d 0.100000
+illum 2
+
+newmtl staklo_crveno
+Ns 249.019608
+Ka 0.000000 0.000000 0.000000
+Kd 0.282353 0.066510 0.031373
+Ks 0.882353 0.207843 0.098039
+Ni 1.500000
+d 0.800000
+illum 2
+
+newmtl staklo_plavo
+Ns 249.019608
+Ka 0.000000 0.000000 0.000000
+Kd 0.026354 0.046431 0.250981
+Ks 0.400000 0.400000 0.400000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl staklo_zeleno
+Ns 249.019608
+Ka 0.000000 0.000000 0.000000
+Kd 0.021333 0.202039 0.023843
+Ks 0.400000 0.400000 0.400000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl staklo_zuto
+Ns 249.019608
+Ka 0.000000 0.000000 0.000000
+Kd 0.320000 0.284862 0.002510
+Ks 0.400000 0.400000 0.400000
+Ni 1.500000
+d 1.000000
+illum 2
+
+newmtl stupovi
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd KAMEN-stup.png
+map_Ka KAMEN-stup.png
+
+newmtl zid_vani
+Ns 3.921569
+Ka 0.000000 0.000000 0.000000
+Kd 0.469835 0.467576 0.431435
+Ks 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd kamen.png
+map_Bump kamen-bump.png
+map_Ka kamen.png

@@ -29,14 +29,17 @@ Camera camera(CameraStyle::NOCLIP,
               glm::vec3(0.0f, 1.0f, 0.0f),
               0.0f);
 bool keys[1024];
+bool keysPressed[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
 
 GLfloat deltaTime(0.0f);
 GLfloat lastFrame(0.0f);
-glm::vec3 lightPos = glm::vec3(5.0f, -8.0f, 0.0f);
+glm::vec3 lightPos = glm::vec3(10.0f, -10.0f, 0.0f);
 glm::vec3 lightColor = glm::vec3(1.0f);
 GLfloat lightIntensity = 20.0f;
+
+bool moving = false;
 
 int main() {
 
@@ -82,10 +85,9 @@ int main() {
     assert(glGetError() == GL_NO_ERROR);
     //Model ourModel("../../assets/models/nanosuit/nanosuit.obj");
     //Model ourModel("../../assets/models/sibenik/sibenik.obj");
-    //Model ourModel("../../assets/models/sibenik/splitedge_sibenik.obj");
-    Model ourModel("../../assets/models/sibenik/nodoubles_sibenik.obj");
-    //Model ourModel("../../assets/models/sibenik/sibenik.dae");
-    //Model ourModel("../../assets/models/sibenik/autosmooth_sibenik.obj");
+    Model ourModel("../../assets/models/sibenik/sibenik.dae");
+    //Model ourModel("../../assets/models/sibenik/nodoubles_sibenik.obj");
+    //Model ourModel("../../assets/models/sibenik/sibenik_with_normals.obj");
     //Model ourModel("../../assets/models/dabrovic_sponza/sponza.obj");
     //Model ourModel("../../assets/models/cornell_box/CornellBox-Original.obj");
     assert(glGetError() == GL_NO_ERROR);
@@ -148,7 +150,8 @@ int main() {
         glfwPollEvents();
         Do_Movement();
 
-        lightPos = glm::vec3(lightPos.x + 0.2f * cosf(currentFrame), lightPos.y + 0.05f * sinf(currentFrame), lightPos.z);
+        if (moving)
+            lightPos = glm::vec3(lightPos.x + 0.25f * cosf(currentFrame), lightPos.y + 0.1f * sinf(currentFrame), 2.5f * cosf(3.0f * currentFrame));
 
         const GLfloat aspect = (GLfloat)SHADOW_WIDTH / (GLfloat)SHADOW_HEIGHT;
         const GLfloat near = 1.0f;
@@ -318,6 +321,11 @@ void Do_Movement() {
     if (keys[GLFW_KEY_SPACE]) {
         camera.ProcessKeyboard(UP, deltaTime);
     }
+
+    if (keys[GLFW_KEY_M] && !keysPressed[GLFW_KEY_M]) {
+        moving = !moving;
+        keysPressed[GLFW_KEY_M] = true;
+    }
 }
 
 void error_callback(int errorCode, const char* description) {
@@ -331,9 +339,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     if (key >= 0 && key < 1024) {
         if (action == GLFW_PRESS) {
             keys[key] = true;
+            keysPressed[key] = true;
         }
         else if (action == GLFW_RELEASE) {
             keys[key] = false;
+            keysPressed[key] = false;
         }
         
     }

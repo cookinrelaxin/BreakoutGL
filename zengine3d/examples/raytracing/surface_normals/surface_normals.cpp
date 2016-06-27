@@ -28,20 +28,20 @@ glm::vec3 color(const ray& r) {
 }
 
 int main(int argc, const char *argv[]) {
-    const int nx = 200;
-    const int ny = 100;
+    const int screenWidth = 1024;
+    const int screenHeight = 512;
 
-    std::cout << "P3\n" << nx << " " << ny << "\n255" << std::endl;
+    std::cout << "P3\n" << screenWidth << " " << screenHeight << "\n255" << std::endl;
 
     const glm::vec3 lower_left_corner(-2.0f, -1.0f, -1.0f);
     const glm::vec3 horizontal(4.0f, 0.0f, 0.0f);
     const glm::vec3 vertical(0.0f, 2.0f, 0.0f);
     const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 
-    for (int j = ny-1; j >= 0; j--) {
-        for (int i = 0; i < nx; i++) {
-            float u = float(i) / float(nx);
-            float v = float(j) / float(ny);
+    for (int j = screenHeight-1; j >= 0; j--) {
+        for (int i = 0; i < screenWidth; i++) {
+            float u = float(i) / float(screenWidth);
+            float v = float(j) / float(screenHeight);
             ray r(origin, lower_left_corner + u*horizontal + v*vertical);
             glm::vec3 col = color(r);
 
