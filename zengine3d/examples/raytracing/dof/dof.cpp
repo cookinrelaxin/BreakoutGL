@@ -3,22 +3,23 @@
 #include <ray.h>
 #include <rt_camera.h>
 #include <sphere.h>
+#include <lambertian.h>
+#include <metal.h>
+#include <dialectric.h>
 #include <hitable_list.h>
 #include <float.h>
 
-glm::vec3 random_in_unit_sphere() {
-    glm::vec3 p;
-    do {
-        p = 2.0f * glm::vec3(drand48(), drand48(), drand48()) - glm::vec3(1.0f, 1.0f, 1.0f);
-    } while (glm::dot(p,p) >= 1.0f);
-    return p;
-}
-
-glm::vec3 color(const ray& r, hitable* world) {
+glm::vec3 color(const ray& r, hitable* world, int depth) {
     hit_record rec;
     if (world->hit(r, 0.001f, MAXFLOAT, rec)) {
-        glm::vec3 target = rec.p + rec.normal + random_in_unit_sphere();
-        return 0.5f * color(ray(rec.p, target - rec.p), world);
+        ray scattered;
+        glm::vec3 attenuation;
+        if (depth < 50.0f && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
+           return attenuation*color(scattered, world, depth+1.0f);
+        }
+        else {
+           return glm::vec3(0.0f, 0.0f, 0.0f);
+        }
     }
     else {
         glm::vec3 unit_direction = glm::normalize(r.direction());
@@ -31,7 +32,7 @@ int main(int argc, const char *argv[]) {
     const float gamma = 2.2f;
     const int screenWidth = 256;
     const int screenHeight = 128;
-    const int numSamples = 1;
+    const int numSamples = 100;
 
     std::cout << "P3\n" << screenWidth << " " << screenHeight << "\n255" << std::endl;
 
@@ -40,12 +41,19 @@ int main(int argc, const char *argv[]) {
     const glm::vec3 vertical(0.0f, 2.0f, 0.0f);
     const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 
-    hitable *list[3];
-    list[0] = new sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f);
-    list[1] = new sphere(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f);
-    list[2] = new sphere(glm::vec3(-1.75f, 0.5f, -2.0f), 0.3f);
-    hitable* world = new hitable_list(list, 3);
-    rt_camera cam;
+    hitable *list[5];
+    list[0] = new sphere(glm::vec3(0.0f, 0.0f, -1.0f), 0.5f, new lambertian(glm::vec3(0.1f, 0.2f, 0.5f)));
+    list[1] = new sphere(glm::vec3(0.0f, -100.5f, -1.0f), 100.0f, new lambertian(glm::vec3(0.8f, 0.8f, 0.0f)));
+    list[2] = new sphere(glm::vec3(1.0f, 0.0f, -1.0f), 0.5f, new metal(glm::vec3(0.8f, 0.6f, 0.2f), 0.0f));
+    list[3] = new sphere(glm::vec3(-1.0f, 0.0f, -1.0f), 0.5f, new dialectric(1.5f));
+    list[4] = new sphere(glm::vec3(-1.0f, 0.0f, -1.0f), -0.45f, new dialectric(1.5f));
+    hitable* world = new hitable_list(list, 5);
+
+    glm::vec3 lookfrom(3.0f, 3.0f, 2.0f);
+    glm::vec3 lookat(0.0f, 0.0f, -1.0f);
+    float dist_to_focus(glm::length(lookfrom-lookat));
+    float aperture = 2.0f;
+    rt_camera cam(lookfrom, lookat, glm::vec3(0.0f, 1.0f, 0.0f), 20.0f, float(screenWidth)/float(screenHeight), aperture, dist_to_focus);
 
     for (int j = screenHeight-1; j >= 0; j--) {
         for (int i = 0; i < screenWidth; i++) {
@@ -54,7 +62,8 @@ int main(int argc, const char *argv[]) {
                 float u = float(drand48() + i) / float(screenWidth);
                 float v = float(drand48() + j) / float(screenHeight);
                 ray r = cam.get_ray(u, v);
-                col += color(r, world);
+                //glm::vec3 p = r.point_at_parameter(2.0f);
+                col += color(r, world, 0);
             }
             col /= float(numSamples);
 
