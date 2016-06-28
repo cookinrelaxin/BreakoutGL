@@ -13,3 +13,5 @@ currently the time complexity of the intersections testing is O(numObjects). a B
 then the path tracing algorithm would have an improved time complexity of O(screenWidth * screenHeight * numSamples * log(numObjects))
 
 this is explored in the bvh example
+
+an actual mistake in the current implementation is that the

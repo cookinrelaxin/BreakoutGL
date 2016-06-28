@@ -12,4 +12,27 @@ currently the time complexity of the intersections testing is O(numObjects). a B
 
 then the path tracing algorithm would have an improved time complexity of O(screenWidth * screenHeight * numSamples * log(numObjects))
 
-this is explored in the bvh example
+parallelism should further improve the time complexity of the render.
+
+~~~~
+implemented bvh. it's definitely faster. profiling with valgrind now to see for low hanging fruit improvements.
+
+havent yet compared performance benchmarks with linear search intersection testing.
+
+~~~~
+according to valgrind, 92.10% of cpu instructions occurred in bvh_node::hit.
+This is the obvious bottleneck. now lets look deeper.
+
+aabb::hit accounted for 75.86% of instructions within bvh_node::hit
+
+ultimately a lot comes down to glm::length().
+
+~~~ 
+still O(screenWidth * screenHeight * numSamples * log(numObjects))
+
+parallelism should help enormously
+
+even with numSamples = 1, a scene with 500 spheres at 1024x512 takes 14.15s to render.
+at least 2 orders of magnitude of improvement are required for 60 fps. (.14s render times)
+
+

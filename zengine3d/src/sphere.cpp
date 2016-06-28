@@ -28,3 +28,9 @@ bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const 
     }
     return false;
 }
+
+bool sphere::bounding_box(float t0, float t1, aabb& box) const {
+    box = aabb(center - glm::vec3(radius, radius, radius),
+               center + glm::vec3(radius, radius, radius));
+    return true;
+}

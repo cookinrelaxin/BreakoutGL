@@ -7,9 +7,9 @@ INCLUDE_PATHS = -I../../../include -I../../../vendor
 LIBRARY_PATHS = -L/usr/local/lib
 
 LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL
-EXEC = balls.bin
+EXEC = bvh.bin
 
-SOURCES = $(wildcard *.cpp) ../../../src/ray.cpp ../../../src/sphere.cpp ../../../src/hitable_list.cpp ../../../src/rt_camera.cpp ../../../src/lambertian.cpp ../../../src/metal.cpp ../../../src/material.cpp ../../../src/dialectric.cpp
+SOURCES = $(wildcard *.cpp) ../../../src/ray.cpp ../../../src/sphere.cpp ../../../src/hitable_list.cpp ../../../src/rt_camera.cpp ../../../src/lambertian.cpp ../../../src/metal.cpp ../../../src/material.cpp ../../../src/dialectric.cpp ../../../src/bvh_node.cpp ../../../src/aabb.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 
