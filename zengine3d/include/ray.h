@@ -8,9 +8,9 @@ class ray {
         /* Functions */
         ray();
         ray(const glm::vec3& a, const glm::vec3&b);
-        glm::vec3 origin() const;
-        glm::vec3 direction() const;
-        glm::vec3 point_at_parameter(float t) const;
+        inline glm::vec3 origin() const { return A; };
+        inline glm::vec3 direction() const { return B; };
+        inline glm::vec3 point_at_parameter(float t) const { return A + t*B; };
         /* Public Data */
 
     private:

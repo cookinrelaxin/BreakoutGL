@@ -1,6 +1,6 @@
 CC = clang++
 
-CC_FLAGS = -w -std=c++14 -ferror-limit=1
+CC_FLAGS = -w -std=c++14 -ferror-limit=1 -O3
 
 INCLUDE_PATHS = -I../../../include -I../../../vendor
 

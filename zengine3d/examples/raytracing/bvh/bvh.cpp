@@ -19,7 +19,7 @@ glm::vec3 color(const ray& r, hitable* world, int depth) {
         ray scattered;
         glm::vec3 attenuation;
         if (depth < NUM_BOUNCES && rec.mat_ptr->scatter(r, rec, attenuation, scattered)) {
-           return attenuation*color(scattered, world, depth+1.0f);
+           return color(scattered, world, depth+1.0f) * attenuation;
         }
         else {
            return glm::vec3(0.0f, 0.0f, 0.0f);
@@ -64,8 +64,8 @@ hitable* random_scene() {
 
 int main(int argc, const char *argv[]) {
     const float gamma = 2.2f;
-    const int screenWidth = 1024;
-    const int screenHeight = 512;
+    const int screenWidth = 1600;
+    const int screenHeight = 800;
     const int numSamples = 1;
 
     std::cout << "P3\n" << screenWidth << " " << screenHeight << "\n255" << std::endl;

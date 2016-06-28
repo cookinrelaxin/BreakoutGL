@@ -35,4 +35,8 @@ parallelism should help enormously
 even with numSamples = 1, a scene with 500 spheres at 1024x512 takes 14.15s to render.
 at least 2 orders of magnitude of improvement are required for 60 fps. (.14s render times)
 
+~~~
+with -O3 level optimization enabled with clang, performance to render a 1600x800 scene with 500 balls and one sample was cut down ~50% from 34.50s to 16.18s
+
+inlining ray::origin, ray::direction, and ray::point_at_parameter reduced time further to 11.85s
 
