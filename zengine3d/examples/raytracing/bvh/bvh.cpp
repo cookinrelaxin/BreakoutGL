@@ -36,6 +36,7 @@ hitable* random_scene() {
     const int n = 500;
     hitable** list = new hitable*[n+1];
     list[0] = new sphere(glm::vec3(0.0f, -1000.0f, 0.0f), 1000.0f, new lambertian(glm::vec3(0.5f, 0.5f, 0.5f)));
+    //list[0] = new sphere(glm::vec3(0.0f, 0.0f, -1.0f), 2.0f, new lambertian(glm::vec3(0.5f, 0.5f, 0.5f)));
     int i = 1;
     for (int a = -11; a < 11; a++) {
       for (int b = -11; b < 11; b++) {
@@ -70,18 +71,18 @@ int main(int argc, const char *argv[]) {
 
     std::cout << "P3\n" << screenWidth << " " << screenHeight << "\n255" << std::endl;
 
-    const glm::vec3 lower_left_corner(-2.0f, -1.0f, -1.0f);
-    const glm::vec3 horizontal(4.0f, 0.0f, 0.0f);
-    const glm::vec3 vertical(0.0f, 2.0f, 0.0f);
-    const glm::vec3 origin(0.0f, 0.0f, 0.0f);
+    //const glm::vec3 lower_left_corner(-2.0f, -1.0f, -1.0f);
+    //const glm::vec3 horizontal(4.0f, 0.0f, 0.0f);
+    //const glm::vec3 vertical(0.0f, 2.0f, 0.0f);
+    //const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 
     hitable* world = random_scene();
 
     glm::vec3 lookfrom(3.0f, 2.0f, 2.0f);
     glm::vec3 lookat(0.0f, 0.0f, -1.0f);
     float dist_to_focus(glm::length(lookfrom-lookat));
-    float aperture = 0.0f;
-    rt_camera cam(lookfrom, lookat, glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, float(screenWidth)/float(screenHeight), aperture, dist_to_focus);
+    float aperture = 0.5f;
+    rt_camera cam(lookfrom, lookat, glm::vec3(0.0f, 1.0f, 0.0f), 10.0f, float(screenWidth)/float(screenHeight), aperture, dist_to_focus);
 
     const float fInvScreenWidth(1.0f / screenWidth);
     const float fInvScreenHeight(1.0f / screenHeight);
@@ -112,4 +113,3 @@ int main(int argc, const char *argv[]) {
     }
     return 0;
 }
-
