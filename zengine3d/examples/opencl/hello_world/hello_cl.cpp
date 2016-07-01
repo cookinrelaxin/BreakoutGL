@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#define DEVICE CL_DEVICE_TYPE_GPU
+//#define DEVICE CL_DEVICE_TYPE_GPU
 
 const std::string hw("Hello World\n");
 
@@ -13,6 +13,13 @@ inline void checkErr(cl_int err, const char* name) {
 }
 
 int main(int argc, const char *argv[]) {
+    if (argc != 2) {
+        std::cout << "please specify gpu or cpu" << std::endl;
+        return 1;
+    }
+    std::string d = argv[1];
+
+    cl_device_type DEVICE = (d == "gpu") ? CL_DEVICE_TYPE_GPU : CL_DEVICE_TYPE_CPU;
     cl_int err;
     cl_uint num_platforms;
     err = clGetPlatformIDs(0, nullptr, &num_platforms);

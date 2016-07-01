@@ -96,9 +96,9 @@ struct Sphere {
 
 int main(int argc, const char *argv[]) {
     const float gamma = 2.2f;
-    const int screenWidth = 500;
-    const int screenHeight = 250;
-    const int numSamples = 200;
+    const int screenWidth = 1200;
+    const int screenHeight = 600;
+    const int numSamples = 10;
 
     //~~~~ OpenCL
 
@@ -112,11 +112,13 @@ int main(int argc, const char *argv[]) {
 
     float* h_colors = new float[pixelBufferLength];
     int* h_seeds = new int[pixelCount];
+    time_t t;
+    srand((unsigned) time(&t));
     for (int i = 0; i < pixelCount; i++) {
        h_seeds[i] = rand(); 
     }
 
-    const unsigned int numSpheres = 3;
+    const unsigned int numSpheres = 5;
     Sphere* h_spheres = new Sphere[numSpheres];
 
     h_spheres[0] = Sphere{.center = cl_float3{0.0f, 1.0f, 0.0f},
@@ -125,9 +127,15 @@ int main(int argc, const char *argv[]) {
     h_spheres[1] = Sphere{.center = cl_float3{0.0f, -1000.0f, 0.0f},
                           .radius = cl_float{1000.0f},
                           .material = Lambertian{cl_float3{0.5f, 0.5f, 0.5f}}}; 
-    h_spheres[2] = Sphere{.center = cl_float3{-3.0f, 1.0f, 0.0f},
-                          .radius = cl_float{1.0f},
+    h_spheres[2] = Sphere{.center = cl_float3{-3.0f, 0.8f, 0.0f},
+                          .radius = cl_float{0.8f},
                           .material = Lambertian{cl_float3{0.1f, 0.9f, 0.1f}}}; 
+    h_spheres[3] = Sphere{.center = cl_float3{-2.0f, 0.1f, 1.0f},
+                          .radius = cl_float{0.1f},
+                          .material = Lambertian{cl_float3{0.1f, 0.1f, 0.9f}}}; 
+    h_spheres[4] = Sphere{.center = cl_float3{1.8f, 0.6f, 0.0f},
+                          .radius = cl_float{0.6f},
+                          .material = Lambertian{cl_float3{1.0f, 1.0f, 1.0f}}}; 
 
     size_t global;
 

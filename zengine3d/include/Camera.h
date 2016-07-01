@@ -104,12 +104,12 @@ class Camera {
         }
 
         void ProcessMouseScroll(GLfloat yoffset) {
-            // if (this->Zoom >= 1.0f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
-            // if (this->Zoom <= 1.0f) this->Zoom = 1.0f;
-            // if (this->Zoom >= 45.0f) this->Zoom = 45.0f;
-            if (this->Zoom >= 44.5f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
-            if (this->Zoom <= 44.5f) this->Zoom = 44.5f;
+            if (this->Zoom >= 1.0f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
+            if (this->Zoom <= 1.0f) this->Zoom = 1.0f;
             if (this->Zoom >= 45.0f) this->Zoom = 45.0f;
+            //if (this->Zoom >= 44.5f && this->Zoom <= 45.0f) this->Zoom -= yoffset;
+            //if (this->Zoom <= 44.5f) this->Zoom = 44.5f;
+            //if (this->Zoom >= 45.0f) this->Zoom = 45.0f;
         }
 
         glm::vec3 Position;

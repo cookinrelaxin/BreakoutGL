@@ -65,9 +65,9 @@ hitable* random_scene() {
 
 int main(int argc, const char *argv[]) {
     const float gamma = 2.2f;
-    const int screenWidth = 1600;
-    const int screenHeight = 800;
-    const int numSamples = 1;
+    const int screenWidth = 500;
+    const int screenHeight = 500;
+    const int numSamples = 10;
 
     std::cout << "P3\n" << screenWidth << " " << screenHeight << "\n255" << std::endl;
 
@@ -81,8 +81,8 @@ int main(int argc, const char *argv[]) {
     glm::vec3 lookfrom(3.0f, 2.0f, 2.0f);
     glm::vec3 lookat(0.0f, 0.0f, -1.0f);
     float dist_to_focus(glm::length(lookfrom-lookat));
-    float aperture = 0.5f;
-    rt_camera cam(lookfrom, lookat, glm::vec3(0.0f, 1.0f, 0.0f), 10.0f, float(screenWidth)/float(screenHeight), aperture, dist_to_focus);
+    float aperture = 0.0f;
+    rt_camera cam(lookfrom, lookat, glm::vec3(0.0f, 1.0f, 0.0f), 90.0f, float(screenWidth)/float(screenHeight), aperture, dist_to_focus);
 
     const float fInvScreenWidth(1.0f / screenWidth);
     const float fInvScreenHeight(1.0f / screenHeight);

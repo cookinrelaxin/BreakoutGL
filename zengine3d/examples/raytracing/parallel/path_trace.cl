@@ -91,11 +91,17 @@ struct Camera initCamera(float3 lookfrom,
 }
 
 float frand(int* seed) {
-    int const a = 16807;
-    int const m = 2147483647;
-    *seed = (long)(*seed * a)%m;
+    const int a = 16807;
+    const int m = 2147483647;
+    *seed = (int)(*seed * a)%m;
     return (float)*seed / (float)INT_MAX;
 }
+
+// JAVA version
+/*float frand(int* seed) {*/
+    /**seed = (*seed * 0x5DEECE66DL + 0xBL) & ((1L << 48) - 1);*/
+    /*return (float)*seed / (float)INT_MAX;*/
+/*}*/
 
 float3 randomInUnitDisk(int* seed) {
     float3 p;
@@ -260,8 +266,10 @@ __kernel void color_pixel(__global struct Pixel* pixels,
 
 
     for (unsigned int i = 0; i < numSamples; ++i) {
-        float u = ((float)x + frand(&seed)) / (float)screenWidth;
-        float v = ((float)y + frand(&seed)) / (float)screenHeight;
+        float u = ((float)x + frand(&seed)*1.0f) / (float)screenWidth;
+        float v = ((float)y + frand(&seed)*1.0f) / (float)screenHeight;
+        /*float u = (float)x / (float)screenWidth;*/
+        /*float v = (float)y / (float)screenHeight;*/
         struct Ray r = getRay(&cam, u, v);
         col += color(&r, &sphereList, &seed, 0);
     }
