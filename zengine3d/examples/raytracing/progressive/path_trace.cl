@@ -8,6 +8,7 @@ struct Material;
 
 bool hitList(struct HitableList* spheres, const struct Ray* r, float t_min, float t_max, struct HitRecord* rec);
 bool scatter(const struct HitRecord* rec, const struct Ray* r_in, float3* attenuation, struct Ray* r_out, int* seed);
+float3 emit(const struct HitRecord* rec);
 bool scatterDialectric(const struct HitRecord* rec, const struct Ray* r_in, float3* attenuation, struct Ray* r_out, int* seed);
 float3 reflect(const float3 v, const float3 n);
 float schlick(const float ref_idx, const float cosine);
@@ -49,6 +50,7 @@ struct Pixel {
 
 struct Material {
     float3 albedo;
+    float3 emission;
     float fuzz;
     float ref_idx;
 };
@@ -170,9 +172,9 @@ bool hitSphere(struct Sphere s, const struct Ray* r, float t_min, float t_max, s
     return false;
 }
 
-/*float3 reflect(const float3 v, const float3 n) {*/
-    /*return (float3)(v - 2.0f * dot(v,n) * n);*/
-/*}*/
+float3 emit(const struct HitRecord* rec) {
+    return rec->material.emission;
+}
 
 bool scatter(const struct HitRecord* rec, const struct Ray* r_in, float3* attenuation, struct Ray* r_out, int* seed) {
     if (rec->material.ref_idx >= 1.0f) {
@@ -274,53 +276,31 @@ float schlick(const float ref_idx, const float cosine) {
     return r0 + (1.0f - r0) * pow((1.0f - cosine), 5.0f);
 }
 
-/*glm::vec3 reflected = reflect(glm::normalize(r_in.direction()), rec.normal);*/
-/*scattered = ray(rec.p, reflected + fuzz*random_in_unit_sphere());*/
-/*attenuation = albedo;*/
-/*return glm::dot(scattered.direction(), rec.normal) > 0.0f;*/
-
-//recursion is forbidden on GPUs. refactor this
-/*float3 color(struct Ray* r, struct HitableList* spheres, int* seed, unsigned int bounceNum) {*/
-    /*const unsigned int max_bounces = 50;*/
-    /*struct HitRecord rec;*/
-    /*if (hitList(spheres, r, 0.001f, FLT_MAX, &rec)) {*/
-        /*struct Ray scattered;*/
-        /*float3 attenuation;*/
-        /*if (bounceNum < max_bounces && scatter(&rec, r, &attenuation, &scattered, seed)) {*/
-            /*return color(&scattered, spheres, seed, bounceNum + 1) * attenuation;*/
-        /*}*/
-        /*else {*/
-            /*return (float3)(0.0f, 0.0f, 0.0f); */
-        /*}*/
-    /*}*/
-    /*else {*/
-        /*float3 unit_direction = normalize(r->direction);*/
-        /*float t = 0.5f * (unit_direction.y + 1.0f);*/
-        /*return (1.0f-t) * (float3)(1.0f,1.0f,1.0f) + t*(float3)(0.5f, 0.7f, 1.0f);*/
-    /*}*/
-/*}*/
-
 float3 color(struct Ray* r, struct HitableList* spheres, int* seed, unsigned int bounceNum) {
     const unsigned int max_bounces = 100;
     struct HitRecord rec;
     float3 col = (float3)(1.0f, 1.0f, 1.0f);
+    float3 emissions = (float3)(0.0f);
     while (hitList(spheres, r, 0.001f, FLT_MAX, &rec)) {
         struct Ray scattered;
         float3 attenuation;
+        float3 emitted = emit(&rec);
         if (bounceNum < max_bounces && scatter(&rec, r, &attenuation, &scattered, seed)) {
             ++bounceNum;
             r->origin = scattered.origin;
             r->direction = scattered.direction;
             col *= attenuation;
+            emissions += emitted;
         }
         else {
-            col = (float3)(0.0f, 0.0f, 0.0f); 
-            return col;
+            return emissions * col;
+            /*return (float3)(0.0f);*/
         }
     }
-    float3 unit_direction = normalize(r->direction);
-    float t = 0.5f * (unit_direction.y + 1.0f);
-    return col * ((1.0f-t) * (float3)(1.0f,1.0f,1.0f) + t*(float3)(0.5f, 0.7f, 1.0f));
+    /*float3 unit_direction = normalize(r->direction);*/
+    /*float t = 0.5f * (unit_direction.y + 1.0f);*/
+    /*return col * ((1.0f-t) * (float3)(1.0f,1.0f,1.0f) + t*(float3)(0.5f, 0.7f, 1.0f));*/
+    return emissions * col;
 }
 
 __kernel void color_pixel(__global struct Pixel* pixels,
@@ -351,12 +331,10 @@ __kernel void color_pixel(__global struct Pixel* pixels,
     const float fInvScreenWidth = 1.0f / screenWidth;
     const float fInvScreenHeight = 1.0f / screenHeight;
 
-    /*float diff = length((float2)(screenWidth/2, screenHeight/2) - (float2)(x, y));*/
-    /*unsigned int numSamples = maxSamples / (int)pow(diff, 1.1f);*/
-    unsigned int numSamples = maxSamples;
+    /*float aperture = 0.01f;*/
+    /*cam.lens_radius = aperture / 2.0f;*/
 
-    float aperture = 0.01f;
-    cam.lens_radius = aperture / 2.0f;
+    unsigned int numSamples = maxSamples;
 
     for (unsigned int i = 0; i < numSamples; ++i) {
         float u = ((float)x + frand(&seed)) * fInvScreenWidth;

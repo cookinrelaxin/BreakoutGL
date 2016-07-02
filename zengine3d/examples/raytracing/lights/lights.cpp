@@ -42,7 +42,7 @@ GLuint screenWidth(300), screenHeight(300);
 GLfloat deltaTime(0.0f);
 GLfloat lastFrame(0.0f);
 
-GLuint numSamples(3);
+GLuint numSamples(10);
 //const float GAMMA = 2.2f;
 const int NUM_BOUNCES(100);
 GLuint textureID;
@@ -121,6 +121,7 @@ std::string read_program(std::string name) {
 
 struct cl_Material {
     cl_float3 albedo;
+    cl_float3 emission;
     cl_float fuzz;
     cl_float ref_idx;
 };
@@ -234,7 +235,7 @@ int main(int argc, const char *argv[]) {
        h_seeds[i] = rand(); 
     }
 
-    const unsigned int numSpheres = 3;
+    const unsigned int numSpheres = 5;
     cl_Sphere* h_spheres = new cl_Sphere[numSpheres];
 
     h_spheres[0] = cl_Sphere{.center = cl_float3{0.0f, 1.0f, 0.0f},
@@ -242,6 +243,7 @@ int main(int argc, const char *argv[]) {
                           .material = cl_Material{
                               //.albedo = cl_float3{1.0f, 1.0f, 1.0f},
                               .albedo = cl_float3{214.0f / 255.0f, 187.0f / 255.0f, 125.0f / 255.0f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
                               .fuzz = cl_float(1.0f),
                               //.ref_idx = cl_float(2.42f)
                               .ref_idx = cl_float(1.47f)
@@ -251,31 +253,39 @@ int main(int argc, const char *argv[]) {
                           .radius = cl_float{1000.0f},
                           .material = cl_Material{
                               .albedo = cl_float3{0.5f, 0.5f, 0.5f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
                               .fuzz = cl_float(1.0f),
                               .ref_idx = cl_float(0.0f)
                           }}; 
     h_spheres[2] = cl_Sphere{.center = cl_float3{-3.0f, 0.8f, 0.0f},
                           .radius = cl_float{0.8f},
                           .material = cl_Material{
-                              .albedo = cl_float3{0.4f, 0.9f, 0.2f},
+                              //.albedo = cl_float3{0.4f, 0.9f, 0.2f},
+                              .albedo = cl_float3{1.0f, 1.0f, 1.0f},
+                              //.emission = cl_float3{0.4f, 0.9f, 0.2f},
+                              //.emission = cl_float3{3.0f * 0.4f, 3.0f * 0.9f, 3.0f * 0.2f},
+                              .emission = cl_float3{10.0f * 1.0f, 10.0f * 1.0f, 10.0f * 1.0f},
+                              //.emission = cl_float3{0.0f, 0.0f, 0.0f},
                               .fuzz = cl_float(1.0f),
                               .ref_idx = cl_float(0.0f)
                           }}; 
-    //h_spheres[3] = cl_Sphere{.center = cl_float3{-2.0f, 0.1f, 1.0f},
-                          //.radius = cl_float{0.1f},
-                          //.material = cl_Material{
-                              //.albedo = cl_float3{0.1f, 0.f, 0.9f},
-                              //.fuzz = cl_float(0.1f),
-                              //.ref_idx = cl_float(0.0f)
-                          //}}; 
-    //h_spheres[4] = cl_Sphere{.center = cl_float3{3.4f, 3.0f, -2.0f},
-                          //.radius = cl_float{3.0f},
-                          //.material = cl_Material{
-                              ////.albedo = cl_float3{212.0f/255.0f, 175.0f/255.0f, 55.0f/255.0f},
-                              //.albedo = cl_float3{0.7f, 0.7f, 0.7f},
-                              //.fuzz = cl_float(0.01f),
-                              //.ref_idx = cl_float(0.0f)
-                          //}}; 
+    h_spheres[3] = cl_Sphere{.center = cl_float3{2.2f, 1.0f , 1.0f},
+                          .radius = cl_float{1.0f},
+                          .material = cl_Material{
+                              .albedo = cl_float3{0.1f, 0.f, 0.9f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
+                              .fuzz = cl_float(1.0f),
+                              .ref_idx = cl_float(0.0f)
+                          }}; 
+    h_spheres[4] = cl_Sphere{.center = cl_float3{3.4f, 3.0f, -3.0f},
+                          .radius = cl_float{3.0f},
+                          .material = cl_Material{
+                              //.albedo = cl_float3{212.0f/255.0f, 175.0f/255.0f, 55.0f/255.0f},
+                              .albedo = cl_float3{0.7f, 0.7f, 0.7f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
+                              .fuzz = cl_float(0.01f),
+                              .ref_idx = cl_float(0.0f)
+                          }}; 
 
     size_t global;
 

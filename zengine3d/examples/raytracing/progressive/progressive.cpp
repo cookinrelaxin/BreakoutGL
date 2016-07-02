@@ -36,15 +36,15 @@ bool keys[1024];
 bool keysPressed[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
+bool didMove = false;
 GLuint screenWidth(300), screenHeight(300);
 //GLuint screenWidth(900), screenHeight(900);
 
 GLfloat deltaTime(0.0f);
 GLfloat lastFrame(0.0f);
 
-GLuint numSamples(3);
-//const float GAMMA = 2.2f;
-const int NUM_BOUNCES(100);
+GLuint numSamples(1);
+const float averageThreshold = 0.001f;
 GLuint textureID;
 
 void RenderQuad();
@@ -121,6 +121,7 @@ std::string read_program(std::string name) {
 
 struct cl_Material {
     cl_float3 albedo;
+    cl_float3 emission;
     cl_float fuzz;
     cl_float ref_idx;
 };
@@ -179,6 +180,11 @@ struct cl_Camera initCamera(glm::vec3 lookfrom,
 
 int main(int argc, const char *argv[]) {
 
+    if (argc == 3) {
+        screenWidth = screenHeight = std::stoi(argv[1]);
+        numSamples = std::stoi(argv[2]);
+    }
+
     {
         glfwInit();
         glfwSetErrorCallback(error_callback);
@@ -227,6 +233,7 @@ int main(int argc, const char *argv[]) {
     const int pixelBufferLength = 3 * pixelCount;
 
     float* h_colors = new float[pixelBufferLength];
+    float* intermediateBuffer = new float[pixelBufferLength];
     int* h_seeds = new int[pixelCount];
     time_t t;
     srand((unsigned) time(&t));
@@ -234,7 +241,7 @@ int main(int argc, const char *argv[]) {
        h_seeds[i] = rand(); 
     }
 
-    const unsigned int numSpheres = 3;
+    const unsigned int numSpheres = 6;
     cl_Sphere* h_spheres = new cl_Sphere[numSpheres];
 
     h_spheres[0] = cl_Sphere{.center = cl_float3{0.0f, 1.0f, 0.0f},
@@ -242,6 +249,7 @@ int main(int argc, const char *argv[]) {
                           .material = cl_Material{
                               //.albedo = cl_float3{1.0f, 1.0f, 1.0f},
                               .albedo = cl_float3{214.0f / 255.0f, 187.0f / 255.0f, 125.0f / 255.0f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
                               .fuzz = cl_float(1.0f),
                               //.ref_idx = cl_float(2.42f)
                               .ref_idx = cl_float(1.47f)
@@ -251,31 +259,48 @@ int main(int argc, const char *argv[]) {
                           .radius = cl_float{1000.0f},
                           .material = cl_Material{
                               .albedo = cl_float3{0.5f, 0.5f, 0.5f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
                               .fuzz = cl_float(1.0f),
                               .ref_idx = cl_float(0.0f)
                           }}; 
     h_spheres[2] = cl_Sphere{.center = cl_float3{-3.0f, 0.8f, 0.0f},
                           .radius = cl_float{0.8f},
                           .material = cl_Material{
-                              .albedo = cl_float3{0.4f, 0.9f, 0.2f},
+                              //.albedo = cl_float3{0.4f, 0.9f, 0.2f},
+                              .albedo = cl_float3{1.0f, 1.0f, 1.0f},
+                              //.emission = cl_float3{0.4f, 0.9f, 0.2f},
+                              //.emission = cl_float3{3.0f * 0.4f, 3.0f * 0.9f, 3.0f * 0.2f},
+                              //.emission = cl_float3{10.0f * 1.0f, 10.0f * 1.0f, 10.0f * 1.0f},
+                              .emission = cl_float3{1.0f, 1.0f, 1.0f},
+                              //.emission = cl_float3{0.0f, 0.0f, 0.0f},
                               .fuzz = cl_float(1.0f),
                               .ref_idx = cl_float(0.0f)
                           }}; 
-    //h_spheres[3] = cl_Sphere{.center = cl_float3{-2.0f, 0.1f, 1.0f},
-                          //.radius = cl_float{0.1f},
-                          //.material = cl_Material{
-                              //.albedo = cl_float3{0.1f, 0.f, 0.9f},
-                              //.fuzz = cl_float(0.1f),
-                              //.ref_idx = cl_float(0.0f)
-                          //}}; 
-    //h_spheres[4] = cl_Sphere{.center = cl_float3{3.4f, 3.0f, -2.0f},
-                          //.radius = cl_float{3.0f},
-                          //.material = cl_Material{
-                              ////.albedo = cl_float3{212.0f/255.0f, 175.0f/255.0f, 55.0f/255.0f},
-                              //.albedo = cl_float3{0.7f, 0.7f, 0.7f},
-                              //.fuzz = cl_float(0.01f),
-                              //.ref_idx = cl_float(0.0f)
-                          //}}; 
+    h_spheres[3] = cl_Sphere{.center = cl_float3{2.2f, 1.0f , 1.0f},
+                          .radius = cl_float{1.0f},
+                          .material = cl_Material{
+                              .albedo = cl_float3{0.1f, 0.f, 0.9f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
+                              .fuzz = cl_float(1.0f),
+                              .ref_idx = cl_float(0.0f)
+                          }}; 
+    h_spheres[4] = cl_Sphere{.center = cl_float3{3.4f, 3.0f, -3.0f},
+                          .radius = cl_float{3.0f},
+                          .material = cl_Material{
+                              //.albedo = cl_float3{212.0f/255.0f, 175.0f/255.0f, 55.0f/255.0f},
+                              .albedo = cl_float3{0.7f, 0.7f, 0.7f},
+                              .emission = cl_float3{0.0f, 0.0f, 0.0f},
+                              .fuzz = cl_float(0.01f),
+                              .ref_idx = cl_float(0.0f)
+                          }}; 
+    h_spheres[5] = cl_Sphere{.center = cl_float3{0.0f, 5.0f, -5.0f},
+                          .radius = cl_float{0.3f},
+                          .material = cl_Material{
+                              .albedo = cl_float3{1.0f, 1.0f, 1.0f},
+                              .emission = cl_float3{1.0f, 1.0f, 1.0f},
+                              .fuzz = cl_float(1.0f),
+                              .ref_idx = cl_float(0.0f)
+                          }}; 
 
     size_t global;
 
@@ -384,10 +409,11 @@ int main(int argc, const char *argv[]) {
             //.radius = cl_float{1.0f},
             //.material = Material{cl_float3{0.9f, 0.1f, 0.1f}}}; 
 
-        h_spheres[0].center = cl_float3{sinf(currentFrame)/2.0f, 1.0f, 0.0f};
+        //h_spheres[0].center = cl_float3{sinf(currentFrame)/2.0f, 1.0f, 0.0f};
         //h_spheres[0].radius = cl_float{fabsf(sinf(currentFrame))};
 
         int seed = (unsigned int)(INT_MAX*currentFrame);
+        //int seed = 5;
         //std::cout << "seed: " << seed << std::endl;
         //std::cout << "currentFrame: " << currentFrame << std::endl;
         //return 0;
@@ -412,8 +438,32 @@ int main(int argc, const char *argv[]) {
         err = clFinish(commands);
         checkErr(err, "waiting for the kernel to finish");
 
-        err = clEnqueueReadBuffer(commands, d_colors, CL_TRUE, 0, sizeof(float) * pixelBufferLength, h_colors, 0, nullptr, nullptr);
+        err = clEnqueueReadBuffer(commands, d_colors, CL_TRUE, 0, sizeof(float) * pixelBufferLength, intermediateBuffer, 0, nullptr, nullptr);
         checkErr(err, "reading back d_colors");
+
+        for (int i = 0; i < pixelBufferLength; i+=3) {
+            if (didMove) {
+                h_colors[i] = intermediateBuffer[i];
+                h_colors[i+1] = intermediateBuffer[i+1];
+                h_colors[i+2] = intermediateBuffer[i+2];
+            }
+            else {
+                if (glm::length(glm::vec3(
+                                intermediateBuffer[i],
+                                intermediateBuffer[i+1],
+                                intermediateBuffer[i+2])) <= averageThreshold) {
+                    h_colors[i] = h_colors[i];
+                    h_colors[i+1] = h_colors[i+1];
+                    h_colors[i+2] = h_colors[i+2];
+                }
+                else {
+                    h_colors[i]   = (h_colors[i]   + intermediateBuffer[i])   / 2.0f;
+                    h_colors[i+1] = (h_colors[i+1] + intermediateBuffer[i+1]) / 2.0f;
+                    h_colors[i+2] = (h_colors[i+2] + intermediateBuffer[i+2]) / 2.0f;
+                }
+            }
+        }
+        didMove = false;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
@@ -481,22 +531,27 @@ void RenderQuad() {
 
 void Do_Movement() {
     if (keys[GLFW_KEY_W]) {
+        didMove = true;
         camera.ProcessKeyboard(FORWARD, deltaTime);
     }
 
     if (keys[GLFW_KEY_S]) {
+        didMove = true;
         camera.ProcessKeyboard(BACKWARD, deltaTime);
     }
 
     if (keys[GLFW_KEY_A]) {
+        didMove = true;
         camera.ProcessKeyboard(LEFT, deltaTime);
     }
 
     if (keys[GLFW_KEY_D]) {
+        didMove = true;
         camera.ProcessKeyboard(RIGHT, deltaTime);
     }
 
     if (keys[GLFW_KEY_SPACE]) {
+        didMove = true;
         camera.ProcessKeyboard(UP, deltaTime);
     }
 
@@ -528,6 +583,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
+    didMove = true;
     if (firstMouse) {
        lastX = xpos; 
        lastY = ypos; 
