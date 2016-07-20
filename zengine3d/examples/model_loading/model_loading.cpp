@@ -70,9 +70,9 @@ int main() {
 
     Shader ourShader("./model_loading.vs", "./model_loading.fs");
 
-    Model ourModel;
+    Model ourModel("../../assets/models/nanosuit/nanosuit.obj");
     assert(glGetError() == GL_NO_ERROR);
-    ourModel.LoadMesh("../../assets/models/nanosuit/nanosuit.obj");
+    //ourModel.LoadMesh("../../assets/models/nanosuit/nanosuit.obj");
     assert(glGetError() == GL_NO_ERROR);
 
     while (!glfwWindowShouldClose(window)) {
@@ -98,7 +98,7 @@ int main() {
         model = glm::translate(model, glm::vec3(0.0f, -1.75f, 0.0f));
         model = glm::scale(model, glm::vec3(0.2f, 0.2f, 0.2f));
         glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
-        ourModel.Render(ourShader);
+        ourModel.render(ourShader);
 
         glfwSwapBuffers(window);
     }

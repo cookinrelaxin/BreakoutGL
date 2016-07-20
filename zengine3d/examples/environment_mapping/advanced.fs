@@ -18,6 +18,6 @@ uniform samplerCube skybox;
 void main() {
     vec3 I = normalize(Position - cameraPos);
     // vec3 R = reflect(I, normalize(Normal));
-    vec3 R = refract(I, normalize(Normal), 1.00/2.42);
+    vec3 R = refract(I, normalize(Normal), 1.00/1.33);
     color = texture(skybox, R);
 }

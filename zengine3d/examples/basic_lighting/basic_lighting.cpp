@@ -60,6 +60,7 @@ int main() {
     {
         glewExperimental = GL_TRUE;
         glewInit();
+        glGetError();
     }
 
     {

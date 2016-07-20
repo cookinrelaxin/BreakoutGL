@@ -1,30 +1,73 @@
 #version 330 core
+
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec2 texCoords;
 layout (location = 2) in vec3 normal;
+layout (location = 5) in vec3 tangent;
+layout (location = 6) in vec3 bitangent;
 
-layout (location = 3) in ivec4 boneIDs;
-layout (location = 4) in vec4 boneWeights;
+/*#define POSITION_LOCATION    0*/
+/*#define TEX_COORD_LOCATION   1*/
+/*#define NORMAL_LOCATION      2*/
+/*#define BONE_ID_LOCATION     3*/
+/*#define BONE_WEIGHT_LOCATION 4*/
+/*#define TANGENT_LOCATION     5*/
+/*#define BITANGENT_LOCATION   6*/
 
-out vec3 Normal;
-out vec3 FragPos;
-out vec2 TexCoords;
+out VS_OUT {
+    vec3 WorldFragPos;
+    vec2 TexCoords;
+    /*vec3 TangentLightPos;*/
+    vec3 TangentViewPos;
+    vec3 TangentViewDirection;
+    vec3 TangentFragPos;
 
-uniform mat4 model;
-uniform mat4 view;
+    /*vec3 WorldLightPos;*/
+    /*vec3 WorldViewPos;*/
+    /*vec3 WorldFragPos;*/
+    mat3 TBN;
+    vec3 WorldNORMAL;
+    vec3 TangentNORMAL;
+} vs_out;
+
+
 uniform mat4 projection;
+uniform mat4 view;
+uniform mat4 model;
 
-const int MAX_BONES = 100;
-uniform mat4 bones[MAX_BONES];
+/*uniform vec3 lightPos;*/
+uniform vec3 viewPos;
 
 void main() {
-    mat4 boneTransform = bones[boneIDs[0]] * boneWeights[0]
-                       + bones[boneIDs[1]] * boneWeights[1] 
-                       + bones[boneIDs[2]] * boneWeights[2] 
-                       + bones[boneIDs[3]] * boneWeights[3];
+    gl_Position = projection * view * model * vec4(position, 1.0f);
+    vs_out.WorldFragPos = vec3(model * vec4(position, 1.0f));
+    vs_out.TexCoords = texCoords;
 
-    gl_Position = projection * view * model * boneTransform * vec4(position, 1.0f);
-    FragPos = vec3(model * boneTransform * vec4(position, 1.0f));
-    Normal = mat3(transpose(inverse(model * boneTransform))) * normal;
-    TexCoords = texCoords;
+    mat3 normalMatrix = transpose(inverse(mat3(model)));
+    vec3 T = normalize(normalMatrix * tangent);
+    vec3 B = normalize(normalMatrix * bitangent);
+    vec3 N = normalize(normalMatrix * normal);
+    vs_out.WorldNORMAL = N;
+
+    //2nd approach
+    /*vec3 T = normalize(vec3(model * vec4(tangent, 0.0f)));*/
+    /*vec3 N = normalize(vec3(model * vec4(normal, 0.0f)));*/
+    /*T = normalize(T - dot(T, N) * N);*/
+    /*vec3 B = cross(T, N);*/
+
+    mat3 TBN = transpose(mat3(T, B, N));
+    vs_out.TangentNORMAL = inverse(transpose(TBN)) * vs_out.WorldNORMAL;
+
+    /*vs_out.TangentLightPos = TBN * lightPos;*/
+    vs_out.TangentViewPos =  TBN * viewPos;
+    vs_out.TangentFragPos =  TBN * vs_out.WorldFragPos;
+    vs_out.TangentViewDirection =  normalize(vs_out.TangentViewPos - vs_out.TangentFragPos);
+
+    /*[>mat3 TBN = mat3(T, B, N);<]*/
+    vs_out.TBN = TBN;
+
+    /*[>vs_out.WorldLightPos = lightPos;<]*/
+    /*vs_out.WorldViewPos  = viewPos;*/
+    /*[>vs_out.WorldFragPos  = vs_out.FragPos;<]*/
+    /*vs_out.WorldFragPos = vec3(model * vec4(position, 1.0f));*/
 }

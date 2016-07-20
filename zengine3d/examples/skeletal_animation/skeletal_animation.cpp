@@ -23,7 +23,7 @@ void error_callback(int errorCode, const char* description);
 void mouse_callback(GLFWwindow* window, double xPos, double yPos);
 void Do_Movement();
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(CameraStyle::NOCLIP, glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
@@ -74,9 +74,9 @@ int main() {
     assert(glGetError() == GL_NO_ERROR);
 
     // Model ourModel("../../assets/models/nanosuit/nanosuit.obj");
-    Model model;
+    Model model("../../assets/models/boblampclean/boblampclean.md5mesh");
     assert(glGetError() == GL_NO_ERROR);
-    model.LoadMesh("../../assets/models/boblampclean/boblampclean.md5mesh");
+    //model.LoadMesh("../../assets/models/boblampclean/boblampclean.md5mesh");
     // model.LoadMesh("../../assets/models/nanosuit/nanosuit.obj");
     assert(glGetError() == GL_NO_ERROR);
 
@@ -101,13 +101,13 @@ int main() {
 
         glm::mat4 modelTransform;
         modelTransform = glm::translate(modelTransform, glm::vec3(0.0f, -5.0f, -3.0f));
-        modelTransform = glm::rotate(modelTransform, -90.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+        modelTransform = glm::rotate(modelTransform, glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
         modelTransform = glm::scale(modelTransform, glm::vec3(0.1f, 0.1f, 0.1f));
         glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, "model"), 1, GL_FALSE, glm::value_ptr(modelTransform));
 
         std::vector<glm::mat4> Transforms;
 
-        model.BoneTransform(currentFrame, Transforms);
+        model.boneTransform(currentFrame, Transforms);
         
         for (uint i = 0 ; i < Transforms.size() ; i++) {
             std::stringstream ss;
@@ -119,7 +119,7 @@ int main() {
             glUniformMatrix4fv(glGetUniformLocation(ourShader.Program, ss.str().c_str()), 1, GL_FALSE, glm::value_ptr(Transforms[i]));       
         }
         
-        model.Render(ourShader);
+        model.render(ourShader);
 
         glfwSwapBuffers(window);
     }

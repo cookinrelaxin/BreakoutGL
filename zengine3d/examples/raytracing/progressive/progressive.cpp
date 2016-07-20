@@ -43,7 +43,7 @@ GLuint screenWidth(300), screenHeight(300);
 GLfloat deltaTime(0.0f);
 GLfloat lastFrame(0.0f);
 
-GLuint numSamples(1);
+GLuint numSamples(2);
 const float averageThreshold = 0.001f;
 GLuint textureID;
 

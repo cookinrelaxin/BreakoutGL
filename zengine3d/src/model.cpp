@@ -61,15 +61,19 @@ bool Model::loadMesh(const std::string& fileName) {
 
         this->m_pScene = m_Importer.ReadFile(fileName.c_str()
                 , aiProcess_Triangulate
-                | aiProcess_GenSmoothNormals
+                //| aiProcess_GenSmoothNormals
                 | aiProcess_CalcTangentSpace
                 | aiProcess_FlipUVs
-                | aiProcess_JoinIdenticalVertices
-                | aiProcess_FixInfacingNormals
+                //| aiProcess_JoinIdenticalVertices
+                //| aiProcess_FixInfacingNormals
                 );
+        //return true;
         return [&]() {
             if (m_pScene) {
                 this->directory = fileName.substr(0, fileName.find_last_of('/'));
+                std::string format = fileName.substr(fileName.find_last_of('.')+1);
+                if (format == "dae")
+                    this->flipAxes = true;
                 this->m_GlobalInverseTransform = glm::inverse(aiToGlm(m_pScene->mRootNode->mTransformation));
 
                 bool ok = initFromScene(m_pScene, fileName);
@@ -134,46 +138,21 @@ bool Model::initFromScene(const aiScene* pScene, const std::string& fileName) {
         for (int j = 0; j < material->GetTextureCount(aiTextureType_NORMALS); j++) {
             aiString str;
             material->GetTexture(aiTextureType_NORMALS, j, &str);
+            //std::cout << "booga: " << str.C_Str() << std::endl;
             meshes[i].textures.push_back(str.C_Str());
         }
         for (int j = 0; j < material->GetTextureCount(aiTextureType_HEIGHT); j++) {
             aiString str;
             material->GetTexture(aiTextureType_HEIGHT, j, &str);
+            //std::cout << "mooga: " << str.C_Str() << std::endl;
             meshes[i].textures.push_back(str.C_Str());
         }
-        aiString mn;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_NAME, mn)) {
-            // throw std::runtime_error("could not get property: AI_MATKEY_NAME from material");
-            mn = "default name";
+        for (int j = 0; j < material->GetTextureCount(aiTextureType_DISPLACEMENT); j++) {
+            aiString str;
+            material->GetTexture(aiTextureType_DISPLACEMENT, j, &str);
+            //std::cout << "dooga: " << str.C_Str() << std::endl;
+            meshes[i].textures.push_back(str.C_Str());
         }
-        const std::string materialName(mn.data);
-        //std::cout << "materialName: " << materialName << std::endl;
-
-        aiColor3D cd;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_DIFFUSE, cd))
-            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_DIFFUSE from material" + materialName);
-        const glm::vec3 materialDiffuse(glm::vec3(cd.r, cd.g, cd.b));
-        //std::cout << "materialDiffuse.x: " << materialDiffuse.x << std::endl;
-        //std::cout << "materialDiffuse.y: " << materialDiffuse.y << std::endl;
-        //std::cout << "materialDiffuse.z: " << materialDiffuse.z << std::endl;
-        meshes[i].diffuseColor = materialDiffuse;
-
-        aiColor3D cs;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_COLOR_SPECULAR, cs))
-            throw std::runtime_error("could not get property: AI_MATKEY_COLOR_SPECULAR from material" + materialName);
-        const glm::vec3 materialSpecular(glm::vec3(cs.r, cs.g, cs.b));
-        //std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
-        //std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
-        //std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
-        meshes[i].specularColor = materialSpecular;
-
-        float shininess;
-        if (AI_SUCCESS != material->Get(AI_MATKEY_SHININESS, shininess))
-            throw std::runtime_error("could not get property: AI_MATKEY_SHININESS from material" + materialName);
-        //std::cout << "materialSpecular.x: " << materialSpecular.x << std::endl;
-        //std::cout << "materialSpecular.y: " << materialSpecular.y << std::endl;
-        //std::cout << "materialSpecular.z: " << materialSpecular.z << std::endl;
-        meshes[i].shininess = shininess;
     }
 
     // Reserve space in the vectors for the vertex attributes and indices
@@ -265,13 +244,20 @@ void Model::initMesh(uint meshIndex,
         const aiVector3D* pBitangent = &(paiMesh->mBitangents[i]);
         const aiVector3D* pTexCoord  = paiMesh->HasTextureCoords(0) ? &(paiMesh->mTextureCoords[0][i]) : &Zero3D;
 
-        //std::cout << "pNormal->x: " << pNormal->x << std::endl;
-
-        positions.push_back(glm::vec3(pPos->x, pPos->y, pPos->z));
-        normals.push_back(glm::vec3(pNormal->x, pNormal->y, pNormal->z));
-        tangents.push_back(glm::vec3(pTangent->x, pTangent->y, pTangent->z));
-        bitangents.push_back(glm::vec3(pBitangent->x, pBitangent->y, pBitangent->z));
-        texCoords.push_back(glm::vec2(pTexCoord->x, pTexCoord->y));
+        if (flipAxes) {
+            positions.push_back( glm::vec3(pPos->x,       pPos->z,       -pPos->y));
+            normals.push_back(   glm::vec3(pNormal->x,    pNormal->z,    -pNormal->y));
+            tangents.push_back(  glm::vec3(pTangent->x,   pTangent->z,   -pTangent->y));
+            bitangents.push_back(glm::vec3(pBitangent->x, pBitangent->z, -pBitangent->y));
+            texCoords.push_back( glm::vec2(pTexCoord->x,  pTexCoord->y));
+        }
+        else {
+            positions.push_back( glm::vec3(pPos->x,       pPos->y,       pPos->z));
+            normals.push_back(   glm::vec3(pNormal->x,    pNormal->y,    pNormal->z));
+            tangents.push_back(  glm::vec3(pTangent->x,   pTangent->y,   pTangent->z));
+            bitangents.push_back(glm::vec3(pBitangent->x, pBitangent->y, pBitangent->z));
+            texCoords.push_back( glm::vec2(pTexCoord->x,  pTexCoord->y));
+        }
     }
 
     loadBones(meshIndex, paiMesh, bones);
@@ -279,7 +265,7 @@ void Model::initMesh(uint meshIndex,
     // Populate the index buffer
     for (uint i = 0 ; i < paiMesh->mNumFaces ; i++) {
         const aiFace& Face = paiMesh->mFaces[i];
-        assert(Face.mNumIndices == 3);
+        //assert(Face.mNumIndices == 3);
         indices.push_back(Face.mIndices[0]);
         indices.push_back(Face.mIndices[1]);
         indices.push_back(Face.mIndices[2]);
@@ -314,83 +300,481 @@ void Model::loadBones(uint meshIndex, const aiMesh* pMesh, std::vector<VertexBon
     }
 }
 
+struct Material {
+    std::string name;
+    glm::vec3   diffuseColor;
+    glm::vec3   specularColor;
+    glm::vec3   ambientColor;
+    glm::vec3   emissiveColor;
+    glm::vec3   transparentColor;
+
+    float phongExponent;
+    float shininessCoefficient;
+
+    Texture diffuseTexture;
+    Texture specularTexture;
+    Texture ambientTexture;
+    Texture emissiveTexture;
+    Texture heightTexture;
+    Texture normalTexture;
+    Texture shininessTexture;
+    Texture opacityTexture;
+    Texture displacementTexture;
+    Texture lightTexture;
+    Texture reflectionTexture;
+
+    void print();
+};
+
+void Texture::print() {
+    std::cout << "Texture Properties" << std::endl;
+    std::cout << "-------------------" << std::endl;
+
+    std::cout << "id: "
+        << id
+        << std::endl;
+
+    std::cout << "type: "
+        << type
+        << std::endl;
+
+    std::cout << "path: "
+        << path.C_Str()
+        << std::endl;
+}
+
+void Material::print() {
+    std::cout << "Material Properties" << std::endl;
+    std::cout << "-------------------" << std::endl;
+
+    std::cout << "name: "
+        << name
+        << std::endl;
+
+    std::cout << "diffuseColor: "
+        << diffuseColor.x
+        << " "
+        << diffuseColor.y
+        << " "
+        << diffuseColor.z
+        << " "
+        << std::endl;
+
+    std::cout << "specularColor: "
+        << specularColor.x
+        << " "
+        << specularColor.y
+        << " "
+        << specularColor.z
+        << " "
+        << std::endl;
+
+    std::cout << "ambientColor: "
+        << ambientColor.x
+        << " "
+        << ambientColor.y
+        << " "
+        << ambientColor.z
+        << " "
+        << std::endl;
+
+    std::cout << "emissiveColor: "
+        << emissiveColor.x
+        << " "
+        << emissiveColor.y
+        << " "
+        << emissiveColor.z
+        << " "
+        << std::endl;
+
+    std::cout << "transparentColor: "
+        << transparentColor.x
+        << " "
+        << transparentColor.y
+        << " "
+        << transparentColor.z
+        << " "
+        << std::endl;
+
+    std::cout << "phongExponent: "
+        << phongExponent
+        << std::endl;
+
+    std::cout << "shininessCoefficient: "
+        << shininessCoefficient
+        << std::endl;
+
+    diffuseTexture      .print();
+    std::cout << std::endl;
+    specularTexture     .print();
+    std::cout << std::endl;
+    ambientTexture      .print();
+    std::cout << std::endl;
+    emissiveTexture     .print();
+    std::cout << std::endl;
+    heightTexture       .print();
+    std::cout << std::endl;
+    normalTexture       .print();
+    std::cout << std::endl;
+    shininessTexture    .print();
+    std::cout << std::endl;
+    opacityTexture      .print();
+    std::cout << std::endl;
+    displacementTexture .print();
+    std::cout << std::endl;
+    lightTexture        .print();
+    std::cout << std::endl;
+    reflectionTexture   .print();
+    std::cout << std::endl;
+}
+
 bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
     // Initialize the materials
     assert(glGetError() == GL_NO_ERROR);
+    std::cout << "num materials: " << pScene->mNumMaterials << std::endl;
     for (uint i = 0 ; i < pScene->mNumMaterials ; i++) {
         const aiMaterial* pMaterial = pScene->mMaterials[i];
+        Material m;
+        {
+            aiString ai_materialName;
+            pMaterial->Get(AI_MATKEY_NAME, ai_materialName);
+            std::string materialName(ai_materialName.C_Str());
+            m.name = materialName;
+        }
 
-        aiTextureType type = aiTextureType_DIFFUSE;
-        unsigned int textureCount = pMaterial->GetTextureCount(type);
-        for (unsigned int j = 0; j < textureCount; j++) {
-            aiString texPath;
-            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
-                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
-            std::cout << "texturePath: " << texPath.data << std::endl;
-          
-            if (m_Textures.find(texPath.data) == m_Textures.end()) {
-                Texture texture;
-                texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "diffuse";
-                texture.path = texPath;
-                m_Textures[texPath.data] = texture;
-                std::cout << "add new diffuse texture: " << texture.path.data << std::endl;
+        {
+            aiColor3D ai_colorDiffuse;
+            pMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, ai_colorDiffuse);
+            glm::vec3 colorDiffuse(ai_colorDiffuse.r, ai_colorDiffuse.g, ai_colorDiffuse.b);
+            m.diffuseColor = colorDiffuse;
+        }
+
+        {
+            aiColor3D ai_colorSpecular;
+            pMaterial->Get(AI_MATKEY_COLOR_SPECULAR, ai_colorSpecular);
+            glm::vec3 colorSpecular(ai_colorSpecular.r, ai_colorSpecular.g, ai_colorSpecular.b);
+            m.specularColor = colorSpecular;
+        }
+
+        {
+            aiColor3D ai_colorAmbient;
+            pMaterial->Get(AI_MATKEY_COLOR_AMBIENT, ai_colorAmbient);
+            glm::vec3 colorAmbient(ai_colorAmbient.r, ai_colorAmbient.g, ai_colorAmbient.b);
+            m.ambientColor = colorAmbient;
+        }
+
+        {
+            aiColor3D ai_colorEmissive;
+            pMaterial->Get(AI_MATKEY_COLOR_EMISSIVE, ai_colorEmissive);
+            glm::vec3 colorEmissive(ai_colorEmissive.r, ai_colorEmissive.g, ai_colorEmissive.b);
+            m.emissiveColor = colorEmissive;
+        }
+
+        {
+            aiColor3D ai_colorTransparent;
+            pMaterial->Get(AI_MATKEY_COLOR_TRANSPARENT, ai_colorTransparent);
+            glm::vec3 colorTransparent(ai_colorTransparent.r, ai_colorTransparent.g, ai_colorTransparent.b);
+            m.transparentColor = colorTransparent;
+        }
+
+        {
+            float phongExponent;
+            pMaterial->Get(AI_MATKEY_SHININESS, phongExponent);
+            m.phongExponent = phongExponent;
+        }
+
+        {
+            float shininessCoefficient;
+            pMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, shininessCoefficient);
+            //m.shininessCoefficient = shininessCoefficient;
+            m.shininessCoefficient = 1.0f;
+        }
+
+        {
+            aiTextureType type = aiTextureType_DIFFUSE;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "diffuse texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.diffuseTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.diffuseTexture.type = "diffuse";
+                    m.diffuseTexture.path = texPath;
+                    m_Textures[texPath.data] = m.diffuseTexture;
+                }
             }
         }
 
-        type = aiTextureType_SPECULAR;
-        textureCount = pMaterial->GetTextureCount(type);
-        for (unsigned int j = 0; j < textureCount; j++) {
-            aiString texPath;
-            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
-                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
-            std::cout << "texturePath: " << texPath.data << std::endl;
-          
-            if (m_Textures.find(texPath.data) == m_Textures.end()) {
-                Texture texture;
-                texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "specular";
-                texture.path = texPath;
-                m_Textures[texPath.data] = texture;
-                std::cout << "add new specular texture: " << texture.path.data << std::endl;
+        {
+            aiTextureType type = aiTextureType_SPECULAR;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "specular texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.specularTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.specularTexture.type = "specular";
+                    m.specularTexture.path = texPath;
+                    m_Textures[texPath.data] = m.specularTexture;
+                }
             }
         }
 
-        type = aiTextureType_HEIGHT;
-        textureCount = pMaterial->GetTextureCount(type);
-        for (unsigned int j = 0; j < textureCount; j++) {
-            aiString texPath;
-            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
-                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
-            std::cout << "texturePath: " << texPath.data << std::endl;
-          
-            if (m_Textures.find(texPath.data) == m_Textures.end()) {
-                Texture texture;
-                texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "height";
-                texture.path = texPath;
-                m_Textures[texPath.data] = texture;
-                std::cout << "add new height texture: " << texture.path.data << std::endl;
+        {
+            aiTextureType type = aiTextureType_AMBIENT;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "ambient texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.ambientTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.ambientTexture.type = "ambient";
+                    m.ambientTexture.path = texPath;
+                    m_Textures[texPath.data] = m.ambientTexture;
+                }
             }
         }
 
-        type = aiTextureType_NORMALS;
-        textureCount = pMaterial->GetTextureCount(type);
-        for (unsigned int j = 0; j < textureCount; j++) {
-            aiString texPath;
-            if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
-                throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
-            std::cout << "texturePath: " << texPath.data << std::endl;
-          
-            if (m_Textures.find(texPath.data) == m_Textures.end()) {
-                Texture texture;
-                texture.id = TextureFromFile(texPath.data, this->directory);
-                texture.type = "normal";
-                texture.path = texPath;
-                m_Textures[texPath.data] = texture;
-                std::cout << "add new normal texture: " << texture.path.data << std::endl;
+        {
+            aiTextureType type = aiTextureType_EMISSIVE;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "emissive texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.emissiveTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.emissiveTexture.type = "emissive";
+                    m.emissiveTexture.path = texPath;
+                    m_Textures[texPath.data] = m.emissiveTexture;
+                }
             }
         }
+
+        {
+            aiTextureType type = aiTextureType_HEIGHT;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "height texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.heightTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.heightTexture.type = "height";
+                    m.heightTexture.path = texPath;
+                    m_Textures[texPath.data] = m.heightTexture;
+                }
+            }
+        }
+
+        {
+            aiTextureType type = aiTextureType_NORMALS;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "normals texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.normalTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.normalTexture.type = "normal";
+                    m.normalTexture.path = texPath;
+                    m_Textures[texPath.data] = m.normalTexture;
+                }
+            }
+        }
+
+        {
+            aiTextureType type = aiTextureType_SHININESS;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "shininess texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.shininessTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.shininessTexture.type = "shininess";
+                    m.shininessTexture.path = texPath;
+                    m_Textures[texPath.data] = m.shininessTexture;
+                }
+            }
+        }
+
+        {
+            aiTextureType type = aiTextureType_OPACITY;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "opacity texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.opacityTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.opacityTexture.type = "opacity";
+                    m.opacityTexture.path = texPath;
+                    m_Textures[texPath.data] = m.opacityTexture;
+                }
+            }
+        }
+
+        {
+            aiTextureType type = aiTextureType_DISPLACEMENT;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "displacement texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.displacementTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.displacementTexture.type = "displacement";
+                    m.displacementTexture.path = texPath;
+                    m_Textures[texPath.data] = m.displacementTexture;
+                }
+            }
+        }
+
+        {
+            aiTextureType type = aiTextureType_LIGHTMAP;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "light texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.lightTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.lightTexture.type = "light";
+                    m.lightTexture.path = texPath;
+                    m_Textures[texPath.data] = m.lightTexture;
+                }
+            }
+        }
+
+        {
+            aiTextureType type = aiTextureType_REFLECTION;
+            unsigned int textureCount = pMaterial->GetTextureCount(type);
+            std::cout << "reflection texture count: " << textureCount << std::endl;
+            for (unsigned int j = 0; j < textureCount; j++) {
+                aiString texPath;
+                if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                    throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+                std::cout << "texturePath: " << texPath.data << std::endl;
+
+                if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                    m.reflectionTexture.id = TextureFromFile(texPath.data, this->directory);
+                    m.reflectionTexture.type = "reflection";
+                    m.reflectionTexture.path = texPath;
+                    m_Textures[texPath.data] = m.reflectionTexture;
+                }
+            }
+        }
+
+
+        //type = aiTextureType_SPECULAR;
+        //textureCount = pMaterial->GetTextureCount(type);
+        //std::cout << "specular texture count: " << textureCount << std::endl;
+        //for (unsigned int j = 0; j < textureCount; j++) {
+            //aiString texPath;
+            //if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                //throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            //std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            //if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                //Texture texture;
+                //texture.id = TextureFromFile(texPath.data, this->directory);
+                //texture.type = "specular";
+                //texture.path = texPath;
+                //m_Textures[texPath.data] = texture;
+                //std::cout << "add new specular texture: " << texture.path.data << std::endl;
+            //}
+        //}
+
+        //std::string heightMapName("hammer_HEIGHT.png");
+        ////std::cout << "this->directory: " << this->directory << std::endl;
+        //std::ifstream heightMapFile(this->directory + "/" + heightMapName);
+        //if (heightMapFile.good()) {
+            //if (m_Textures.find(heightMapName) == m_Textures.end()) {
+                //Texture texture;
+                //texture.id = TextureFromFile(heightMapName.c_str(), this->directory);
+                //texture.type = "height";
+                //texture.path = this->directory + heightMapName;
+                //m_Textures[heightMapName] = texture;
+                //std::cout << "add new height texture: " << heightMapName << std::endl;
+            //}
+        //}
+        ////type = aiTextureType_HEIGHT;
+        ////textureCount = pMaterial->GetTextureCount(type);
+        ////std::cout << "height texture count: " << textureCount << std::endl;
+        ////for (unsigned int j = 0; j < textureCount; j++) {
+            ////aiString texPath;
+            ////if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                ////throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            ////std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            ////if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                ////Texture texture;
+                ////texture.id = TextureFromFile(texPath.data, this->directory);
+                ////texture.type = "height";
+                ////texture.path = texPath;
+                ////m_Textures[texPath.data] = texture;
+                ////std::cout << "add new height texture: " << texture.path.data << std::endl;
+            ////}
+        ////}
+
+        //type = aiTextureType_NORMALS;
+        //textureCount = pMaterial->GetTextureCount(type);
+        //std::cout << "normal texture count: " << textureCount << std::endl;
+        //for (unsigned int j = 0; j < textureCount; j++) {
+            //aiString texPath;
+            //if (AI_SUCCESS != pMaterial->Get(AI_MATKEY_TEXTURE(type, j), texPath))
+                //throw std::runtime_error("could not get property: AI_MATKEY_TEXTURE(type,j) from material");
+            //std::cout << "texturePath: " << texPath.data << std::endl;
+          
+            //if (m_Textures.find(texPath.data) == m_Textures.end()) {
+                //Texture texture;
+                //texture.id = TextureFromFile(texPath.data, this->directory);
+                ////if (std::string(texPath.data).find("HEIGHT") != std::string::npos) {
+                    ////texture.type = "height";
+                    ////std::cout << "add new height texture: " << texture.path.data << std::endl;
+                ////}
+                ////else {
+                //texture.type = "normal";
+                //std::cout << "add new normal texture: " << texture.path.data << std::endl;
+                ////}
+                //texture.path = texPath;
+                //m_Textures[texPath.data] = texture;
+            //}
+        //}
 
         // for (int i = 0; i < pMaterial->GetTextureCount(type); i++) {
         //     aiString str;
@@ -418,7 +802,9 @@ bool Model::initMaterials(const aiScene* pScene, const std::string& fileName) {
                 //"texture_specular");
         //m_Textures.insert(specularMaps.begin(), specularMaps.end());
         assert(glGetError() == GL_NO_ERROR);
+    m.print();
     }
+    abort();
     //std::cout << "number of textures loaded: " << this->m_Textures.size() << std::endl;
 
     // return Ret;
@@ -449,6 +835,8 @@ GLint TextureFromFile(const char* path, std::string directory) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     assert(glGetError() == GL_NO_ERROR);
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -490,6 +878,12 @@ void Model::render(Shader& shader)
             else if (name == "specular") {
                 glActiveTexture(GL_TEXTURE0+SPECULAR_TEXTURE_LOCATION);
                 glUniform1i(glGetUniformLocation(shader.Program, "material.specular"), SPECULAR_TEXTURE_LOCATION);
+                glBindTexture(GL_TEXTURE_2D, texture.id);
+                assert(glGetError() == GL_NO_ERROR);
+            }
+            else if (name == "height") {
+                glActiveTexture(GL_TEXTURE0+HEIGHT_TEXTURE_LOCATION);
+                glUniform1i(glGetUniformLocation(shader.Program, "material.height"), HEIGHT_TEXTURE_LOCATION);
                 glBindTexture(GL_TEXTURE_2D, texture.id);
                 assert(glGetError() == GL_NO_ERROR);
             }

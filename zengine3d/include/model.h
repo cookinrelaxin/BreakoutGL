@@ -18,9 +18,10 @@
 #include <shader.h>
 
 struct Texture {
-    GLuint id;
-    std::string type;
-    aiString path;
+    GLuint id = 0;
+    std::string type = "undefined type";
+    aiString path = aiString("undefined path");
+    void print();
 };
 
 class Model {
@@ -152,6 +153,7 @@ enum VB_TYPES {
     };
 
     std::string directory;
+    bool flipAxes;
 
     std::vector<MeshEntry> meshes;
     // std::vector<Texture> m_Textures;

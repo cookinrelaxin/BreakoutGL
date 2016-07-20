@@ -9,7 +9,7 @@ LIBRARY_PATHS = -L/usr/local/lib
 LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL -lassimp
 EXEC = cubemap.bin
 
-SOURCES = $(wildcard *.cpp) ../../src/model.cpp ../../src/mesh.cpp
+SOURCES = $(wildcard *.cpp) ../../src/model.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 

@@ -26,7 +26,7 @@ void Do_Movement();
 GLuint loadTexture(GLchar* path);
 GLuint loadCubemap(std::vector<const GLchar*> faces);
 
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(CameraStyle::NOCLIP, glm::vec3(0.0f, 0.0f, 3.0f));
 bool keys[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
@@ -61,6 +61,7 @@ int main() {
     {
         glewExperimental = GL_TRUE;
         glewInit();
+        glGetError();
     }
 
     {
@@ -228,7 +229,7 @@ int main() {
         // glBindVertexArray(cubeVAO);
         glBindTexture(GL_TEXTURE_CUBE_MAP, skyboxTexture);
         //glDrawArrays(GL_TRIANGLES, 0, 36);
-        nanosuitModel.Draw(shader);
+        nanosuitModel.render(shader);
         glBindVertexArray(0);
 
         glDepthFunc(GL_LEQUAL);

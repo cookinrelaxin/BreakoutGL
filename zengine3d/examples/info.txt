@@ -1,0 +1,404 @@
+~~~~~~~~~~~~~~~~~
+Working Examples:
+~~~~~~~~~~~~~~~~~
+
+basic_lighting
+basic_materials
+
+~~~~~~~~~~~~~~~~
+Broken Examples:
+~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~~~~
+Incomplete Examples:
+~~~~~~~~~~~~~~~~~~~~
+
+~~~~~~~~~~~~~~~~~
+All Examples:
+~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~
+ballistics
+~~~~~~~~~~~~~~~~~
+
+TODO
+
+~~~~~~~~~~~~~~~~~
+basic_lighting
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The basic_lighting example demonstrates a cube illuminated by a moving point light using phong shading.
+
+Features:
+
+Lighting
+--------
+point light         ✔
+phong shading       ✔
+
+Materials
+--------
+solid colors        ✔
+
+~~~~~~~~~~~~~~~~~
+basic_materials
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The basic_materials example demonstrates a cube illuminated by a moving point light using phong shading, with specified ambient, diffuse, and specular, colors.
+
+Features:
+
+Lighting
+--------
+point light               ✔
+phong shading             ✔
+
+Materials
+--------
+solid ambient colors      ✔
+solid diffuse colors      ✔
+solid specular colors     ✔
+
+~~~~~~~~~~~~~~~~~
+blinn_phong
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The blinn_phong example demonstrates a textured plane lit by a moving point light. Press 'b' to toggle between blinn-phong and phong shading.
+
+Features:
+
+Lighting
+--------
+point light             ✔
+phong shading           ✔
+blinn-phong shading     ✔
+
+Materials
+--------
+diffuse textures        ✔
+
+~~~~~~~~~~~~~~~~~
+camera
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The camera example demonstrates a noclip style camera in a 3d environment with randomly placed 3d textured cubes.
+
+Features:
+
+Lighting
+--------
+ambient lighting        ✔
+
+Materials
+--------
+diffuse textures        ✔
+
+Camera
+--------
+noclip                  ✔
+
+~~~~~~~~~~~~~~~~~
+cubemap
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The cubemap example demonstrates a textured cube within a cubemap.
+
+Features:
+
+Lighting
+--------
+ambient lighting        ✔
+
+Materials
+--------
+diffuse textures        ✔
+
+Camera
+--------
+noclip                  ✔
+
+Environment
+~~~~~~~~~~~
+cubemap                 ✔
+
+~~~~~~~~~~~~~~~~~
+directional_light
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The directional_light example demonstrates randomly placed textured cubes lit by a directional light.
+
+Features:
+
+Lighting
+--------
+ambient lighting            ✔
+directional lighting        ✔
+
+Materials
+--------
+diffuse textures            ✔
+
+Camera
+--------
+noclip                      ✔
+
+Environment
+~~~~~~~~~~~
+colored void                ✔
+
+~~~~~~~~~~~~~~~~~
+environment_mapping
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The environment_mapping example demonstrates a loaded model with a reflective or refractive surface within a skybox.
+
+Features:
+
+Lighting
+--------
+ambient lighting        ✗
+
+Materials
+--------
+diffuse textures        ✗
+cubemap reflections     ✔
+cubemap refractions     ✔
+
+Camera
+--------
+noclip                  ✔
+
+Environment
+~~~~~~~~~~~
+cubemap                 ✔
+
+Geometry
+~~~~~~~~
+loaded model            ✔
+
+~~~~~~~~~~~~~~~~~
+gamma_correction
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The gamma_correction example demonstrates a textured plane lit by a moving point light. Toggle gamma correction with 'g'.
+
+Features:
+
+Lighting
+--------
+point light             ✔
+blinn-phong shading     ✔
+
+Materials
+--------
+diffuse textures        ✔
+
+Camera
+--------
+noclip                  ✔
+
+Geometry
+~~~~~~~~
+plane                   ✔
+cube                    ✔
+
+Post-Processing
+~~~~~~~~~~~~~~~
+gamma correction        ✔
+
+~~~~~~~~~~~~~~~~~
+interior
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The interior example demonstrates a fully featured interior environment.
+
+Features:
+
+TODO
+
+~~~~~~~~~~~~~~~~~
+lighting_maps
+~~~~~~~~~~~~~~~~~
+
+Description:
+
+The interior example demonstrates a texture_mapped cube.
+
+Features:
+
+Lighting
+--------
+point light       ✔
+
+Materials
+--------
+diffuse textures  ✔
+specular textures ✔
+
+~~~~~~~~~~~~~~~~~
+lit_model
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+model_loading
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+multiple_lights
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+normal_mapping
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+!opencl! 
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+parallax_mapping
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+picking
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+point_light
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+point_shadows
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+!raytracing! 
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+shadows
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+skeletal_animation
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+spot_light
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+stencil_testing
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO
+~~~~~~~~~~~~~~~~~
+tone_mapping
+~~~~~~~~~~~~~~~~~
+Description:
+
+TODO
+
+Features:
+
+TODO

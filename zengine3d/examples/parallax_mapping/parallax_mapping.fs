@@ -21,31 +21,30 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir) {
     return texCoords - viewDir.xy / viewDir.z * (height * height_scale);
 }
 
-vec2 SteepParallaxMapping(vec2 texCoords, vec3 viewDir) { 
-    const float minLayers = 10;
-    const float maxLayers = 20;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0f, 0.0f, 1.0f), viewDir)));
-    float layerDepth = 1.0f / numLayers;
-    float currentLayerDepth = 0.0f;
+/*vec2 SteepParallaxMapping(vec2 texCoords, vec3 viewDir) { */
+    /*const float minLayers = 10;*/
+    /*const float maxLayers = 20;*/
+    /*float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0f, 0.0f, 1.0f), viewDir)));*/
 
-    vec2 P = viewDir.xy / viewDir.z * height_scale;
-    vec2 deltaTexCoords = P / numLayers;
+    /*vec2 P = viewDir.xy / viewDir.z * height_scale;*/
+    /*vec2 deltaTexCoords = P / numLayers;*/
 
-    vec2 currentTexCoords = texCoords;
-    float currentDepthMapValue = texture(depthMap, currentTexCoords).r;
+    /*vec2 currentTexCoords = texCoords;*/
+    /*float currentDepthMapValue = texture(depthMap, currentTexCoords).r;*/
 
-    while (currentLayerDepth < currentDepthMapValue) {
-        currentTexCoords -= deltaTexCoords;
-        currentDepthMapValue = texture(depthMap, currentTexCoords).r;
-        currentLayerDepth += layerDepth;
-    }
-    return currentTexCoords;
-}
+    /*while (currentLayerDepth < currentDepthMapValue) {*/
+        /*currentTexCoords -= deltaTexCoords;*/
+        /*currentDepthMapValue = texture(depthMap, currentTexCoords).r;*/
+        /*currentLayerDepth += layerDepth;*/
+    /*}*/
+    /*return currentTexCoords;*/
+/*}*/
 
 vec2 ParallaxOcclusionMapping(vec2 texCoords, vec3 viewDir) { 
     const float minLayers = 10;
     const float maxLayers = 20;
-    float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0f, 0.0f, 1.0f), viewDir)));
+    /*float numLayers = mix(maxLayers, minLayers, abs(dot(vec3(0.0f, 0.0f, 1.0f), viewDir)));*/
+    float numLayers = maxLayers;
     float layerDepth = 1.0f / numLayers;
     float currentLayerDepth = 0.0f;
 
