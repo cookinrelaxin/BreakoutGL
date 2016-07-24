@@ -37,13 +37,13 @@ bool keysPressed[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
 bool didMove = false;
-GLuint screenWidth(300), screenHeight(300);
-//GLuint screenWidth(900), screenHeight(900);
+//GLuint screenWidth(300), screenHeight(300);
+GLuint screenWidth(1600), screenHeight(1200);
 
 GLfloat deltaTime(0.0f);
 GLfloat lastFrame(0.0f);
 
-GLuint numSamples(2);
+GLuint numSamples(1);
 const float averageThreshold = 0.001f;
 GLuint textureID;
 
@@ -232,8 +232,8 @@ int main(int argc, const char *argv[]) {
     const int pixelCount = screenWidth * screenHeight;
     const int pixelBufferLength = 3 * pixelCount;
 
-    float* h_colors = new float[pixelBufferLength];
-    float* intermediateBuffer = new float[pixelBufferLength];
+    cl_uchar* h_colors = new cl_uchar[pixelBufferLength];
+    cl_uchar* intermediateBuffer = new cl_uchar[pixelBufferLength];
     int* h_seeds = new int[pixelCount];
     time_t t;
     srand((unsigned) time(&t));
@@ -348,22 +348,20 @@ int main(int argc, const char *argv[]) {
     //const char options[] = "";
     const char options[] = "-cl-fast-relaxed-math";
     err = clBuildProgram(program, 1, &device_id, options, nullptr, nullptr);
-    if (err != CL_SUCCESS) {
-        size_t len;
+    size_t len;
 
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
-        char* log = new char[len];
-        clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, sizeof(log), log, NULL);
-        std::cout << log << std::endl;
+    clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, NULL, NULL, &len);
+    char* log = new char[len];
+    clGetProgramBuildInfo(program, device_id, CL_PROGRAM_BUILD_LOG, len, log, NULL);
+    std::cout << log << std::endl;
 
-        checkErr(err, "building program");
-        delete[] log;
-    }
+    checkErr(err, "building program");
+    delete[] log;
 
     ko_color_pixel = clCreateKernel(program, "color_pixel", &err);
     checkErr(err, "Creating Kernel");
 
-    d_colors = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(float) * pixelBufferLength, nullptr, &err);
+    d_colors = clCreateBuffer(context, CL_MEM_READ_WRITE, sizeof(cl_uchar) * pixelBufferLength, nullptr, &err);
     checkErr(err, "creating buffer d_colors");
 
     d_seeds = clCreateBuffer(context, CL_MEM_READ_WRITE | CL_MEM_USE_HOST_PTR, sizeof(int) * pixelCount, (void*)h_seeds, &err);
@@ -438,38 +436,39 @@ int main(int argc, const char *argv[]) {
         err = clFinish(commands);
         checkErr(err, "waiting for the kernel to finish");
 
-        err = clEnqueueReadBuffer(commands, d_colors, CL_TRUE, 0, sizeof(float) * pixelBufferLength, intermediateBuffer, 0, nullptr, nullptr);
+        //err = clEnqueueReadBuffer(commands, d_colors, CL_TRUE, 0, sizeof(cl_uchar) * pixelBufferLength, intermediateBuffer, 0, nullptr, nullptr);
+        err = clEnqueueReadBuffer(commands, d_colors, CL_TRUE, 0, sizeof(cl_uchar) * pixelBufferLength, h_colors, 0, nullptr, nullptr);
         checkErr(err, "reading back d_colors");
 
-        for (int i = 0; i < pixelBufferLength; i+=3) {
-            if (didMove) {
-                h_colors[i] = intermediateBuffer[i];
-                h_colors[i+1] = intermediateBuffer[i+1];
-                h_colors[i+2] = intermediateBuffer[i+2];
-            }
-            else {
-                if (glm::length(glm::vec3(
-                                intermediateBuffer[i],
-                                intermediateBuffer[i+1],
-                                intermediateBuffer[i+2])) <= averageThreshold) {
-                    h_colors[i] = h_colors[i];
-                    h_colors[i+1] = h_colors[i+1];
-                    h_colors[i+2] = h_colors[i+2];
-                }
-                else {
-                    h_colors[i]   = (h_colors[i]   + intermediateBuffer[i])   / 2.0f;
-                    h_colors[i+1] = (h_colors[i+1] + intermediateBuffer[i+1]) / 2.0f;
-                    h_colors[i+2] = (h_colors[i+2] + intermediateBuffer[i+2]) / 2.0f;
-                }
-            }
-        }
-        didMove = false;
+        //for (int i = 0; i < pixelBufferLength; i+=3) {
+            //if (didMove) {
+                //h_colors[i] = intermediateBuffer[i];
+                //h_colors[i+1] = intermediateBuffer[i+1];
+                //h_colors[i+2] = intermediateBuffer[i+2];
+            //}
+            //else {
+                //if (glm::length(glm::vec3(
+                                //intermediateBuffer[i],
+                                //intermediateBuffer[i+1],
+                                //intermediateBuffer[i+2])) <= averageThreshold) {
+                    //h_colors[i] = h_colors[i];
+                    //h_colors[i+1] = h_colors[i+1];
+                    //h_colors[i+2] = h_colors[i+2];
+                //}
+                //else {
+                    //h_colors[i]   = (h_colors[i]   + intermediateBuffer[i])   / 2;
+                    //h_colors[i+1] = (h_colors[i+1] + intermediateBuffer[i+1]) / 2;
+                    //h_colors[i+2] = (h_colors[i+2] + intermediateBuffer[i+2]) / 2;
+                //}
+            //}
+        //}
+        //didMove = false;
 
         glClear(GL_COLOR_BUFFER_BIT);
 
         glBindTexture(GL_TEXTURE_2D, textureID);
         //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight, 0, GL_RGB, GL_FLOAT, h_colors);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, h_colors);
 
         glGenerateMipmap(GL_TEXTURE_2D);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -477,7 +476,7 @@ int main(int argc, const char *argv[]) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glUniform2f(glGetUniformLocation(shader.Program, "resolution"), screenWidth, screenHeight);
+        //glUniform2f(glGetUniformLocation(shader.Program, "resolution"), screenWidth, screenHeight);
         //glUniformMatrix4fv(glGetUniformLocation(shader.Program, "model"), 1, GL_FALSE, glm::value_ptr(model));
 
         RenderQuad();

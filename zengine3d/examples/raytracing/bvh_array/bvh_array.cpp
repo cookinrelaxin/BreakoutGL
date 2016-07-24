@@ -4,6 +4,7 @@
 #include <rt_camera.h>
 #include <sphere.h>
 #include <bvh_node.h>
+#include <bvh_array.h>
 #include <hitable_list.h>
 #include <lambertian.h>
 #include <metal.h>
@@ -31,6 +32,32 @@ glm::vec3 color(const ray& r, hitable* world, int depth) {
         return (1.0f-t) * glm::vec3(1.0f,1.0f,1.0f) + t*glm::vec3(0.5f, 0.7f, 1.0f);
     }
 }
+
+int BreadthFirstOrderOutput(hitable* t, hitable* n, int i) {
+    n = t;
+    if (t->left
+}
+
+//int PreorderOutput(hitable* t, bvh_node n[], int i) {
+    //const int STACK_SIZE = 100;
+    //static int parentStack[STACK_SIZE];
+    //static int sp = 0;
+
+    //n[i].box = t->box;
+    //n[i].hasleft = t->left != nullptr;
+    //if (t->right) {
+        //assert(sp < STACK_SIZE);
+        //parentStack[sp++] = i;
+    //}
+    //if (t->left)
+        //i = PreorderOutput(t->left, n, i + i);
+    //if (t->right) {
+        //int p = parentStack[--sp];
+        //n[p].rightPtr = &n[i+i];
+        //i = PreorderOutput(t->right, n, i + 1);
+    //}
+    //return i;
+//}
 
 hitable* random_scene() {
     const int n = 500;
@@ -77,6 +104,8 @@ int main(int argc, const char *argv[]) {
     //const glm::vec3 origin(0.0f, 0.0f, 0.0f);
 
     hitable* world = random_scene();
+    hitable* bvh_array = world;
+    BreadthFirstOrderOutput(world, bvh_array, 0);
 
     glm::vec3 lookfrom(3.0f, 2.0f, 2.0f);
     glm::vec3 lookat(0.0f, 0.0f, -1.0f);

@@ -43,9 +43,9 @@ float3 reflect(const float3 v, const float3 n) {
 }
 
 struct Pixel {
-    float r;
-    float g;
-    float b;
+    uchar r;
+    uchar g;
+    uchar b;
 };
 
 struct Material {
@@ -316,6 +316,11 @@ __kernel void color_pixel(__global struct Pixel* pixels,
     // range from 0..numPixels
     unsigned int n = get_global_id(0);
 
+    /*pixels[n].r = 255;*/
+    /*pixels[n].g = 255;*/
+    /*pixels[n].b = 255;*/
+    /*return;*/
+
     int seed = s*seeds[n];
 
     int x = n % screenWidth;
@@ -349,8 +354,8 @@ __kernel void color_pixel(__global struct Pixel* pixels,
     col.z = pow(col.z, 1.0f/gamma);
 
     if (n < numPixels) {
-        pixels[n].r = col.x;
-        pixels[n].g = col.y;
-        pixels[n].b = col.z;
+        pixels[n].r = col.x * 255;
+        pixels[n].g = col.y * 255;
+        pixels[n].b = col.z * 255;
     }
 }

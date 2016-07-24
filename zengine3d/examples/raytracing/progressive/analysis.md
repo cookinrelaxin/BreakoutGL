@@ -14,3 +14,10 @@ now just render the visible fragments with their texture maps generated via path
 the idea here is that a point on an arbitrary object is likely to be lit at one moment similarly to the previous moment, so there would be very large amounts of recomputation per frame to determine that point's lighting. by cacheing path traced lighting computations with per-object texture maps, we can save lots of computational time.
 
 The problem is to determine when texels do need to be recomputed due to changes in light positions and intensities, object positions, or view positions.
+
+~~~~~~~~~~~~~~~~~
+performance alternates between 166.667 ms/frame and 200ms/frame
+~~~~~~~~~~~~~~~~~
+after moving pixel data from float to unsigned bytes:
+performance alternates between 142.857 ms/frame and 166.667 ms/frame
+

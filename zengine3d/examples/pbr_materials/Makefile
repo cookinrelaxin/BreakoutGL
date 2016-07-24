@@ -7,9 +7,11 @@ INCLUDE_PATHS = -I../../include -I../../vendor
 LIBRARY_PATHS = -L/usr/local/lib
 
 LINKER_FLAGS = -framework CoreFoundation -framework OpenGL -lglfw3 -lglew -lSOIL -lassimp
-EXEC = pbr_materials.bin
+#EXEC = pbr_materials.bin
+EXEC = fs_generator.bin
 
-SOURCES = $(wildcard *.cpp) ../../src/model.cpp
+#SOURCES = $(wildcard *.cpp) ../../src/model.cpp
+SOURCES = ./fs_generator.cpp ./tinyxml2.cpp
 
 OBJECTS = $(SOURCES:.cpp=.o)
 

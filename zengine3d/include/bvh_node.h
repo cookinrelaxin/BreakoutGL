@@ -5,6 +5,7 @@
 
 class bvh_node : public hitable {
     public:
+        bvh_node(){};
         bvh_node(hitable** l, int n, float time0, float time1);
         
         virtual bool hit(const ray& r, float t_min, float t_max, hit_record& rec) const;

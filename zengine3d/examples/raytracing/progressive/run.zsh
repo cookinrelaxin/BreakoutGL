@@ -1,3 +1,3 @@
 #!/usr/local/bin/zsh
 
-gtimeout 30 ./progressive.bin
+gtimeout 10 ./progressive.bin
