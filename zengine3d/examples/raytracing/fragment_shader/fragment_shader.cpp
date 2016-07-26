@@ -31,7 +31,7 @@ bool keysPressed[1024];
 GLfloat lastX(400), lastY(300);
 bool firstMouse = true;
 bool didMove = false;
-GLuint screenWidth(300), screenHeight(300);
+GLuint screenWidth(900), screenHeight(900);
 //GLuint screenWidth(1600), screenHeight(1600);
 
 GLfloat deltaTime(0.0f);
@@ -178,8 +178,9 @@ int main(int argc, const char *argv[]) {
     Shader shader("./path_trace.vs", "./path_trace.fs");
     shader.Use();
 
-    gl_Sphere red =   gl_Sphere{glm::vec3(0.0f, 4.0f, -3.0f),     4.0f,    gl_Material{glm::vec3(0.7f, 0.4f, 0.1f), 1.0f, 1.47f}};
-    gl_Sphere green = gl_Sphere{glm::vec3(8.0f, 3.0f, -3.0f),     3.0f,    gl_Material{glm::vec3(0.2f, 0.6f, 0.2f), 0.0f, 0.0f }};
+    //gl_Sphere red =   gl_Sphere{glm::vec3(0.0f, 4.0f, -3.0f),     4.0f,    gl_Material{glm::vec3(0.7f, 0.4f, 0.1f), 1.0f, 1.47f}};
+    gl_Sphere red =   gl_Sphere{glm::vec3(0.0f, 4.0f, -3.0f),     4.0f,    gl_Material{glm::vec3(0.1f, 0.1f, 0.9f), 1.0f, 1.33f}};
+    gl_Sphere green = gl_Sphere{glm::vec3(8.0f, 3.0f, -3.0f),     3.0f,    gl_Material{glm::vec3(0.2f, 0.6f, 0.2f), 0.1f, 0.0f }};
     gl_Sphere blue =  gl_Sphere{glm::vec3(-6.0f, 2.0f, -3.0f),    2.0f,    gl_Material{glm::vec3(0.2f, 0.2f, 0.6f), 1.0f, 0.0f }};
     gl_Sphere big =   gl_Sphere{glm::vec3(0.0f, -1000.0f, -3.0f), 1000.0f, gl_Material{glm::vec3(0.5f, 0.5f, 0.5f), 1.0f, 0.0f }};
     gl_Sphere spheres[4] = {red, blue, green, big};

@@ -267,15 +267,11 @@ vec3 color(Ray r, Sphere[NUM_SPHERES] spheres) {
 void main() {
 
     seed = time * int(TexCoords.x * resolution.x) / int(TexCoords.y * resolution.y);
-    // for (int i = 0; i < 10000; ++i)
-    //     frand();
-    // out_color = vec4(frand(), frand(), frand(), 1.0f);
-    // return;
 
     float x = gl_FragCoord.x;
     float y = gl_FragCoord.y;
 
-    const uint numSamples = 1;
+    const uint numSamples = 2;
 
     vec3 col = vec3(0.0f);
 
